@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>NEON DUEL HOCKEY - JOY-CON & SCHOOL WIFI EDITION</title>
+  <title>NEON DUEL HOCKEY - JOY-CON & WIFI EDITION</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- PeerJS -->
+  <!-- 安定したPeerJS最新版 -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=M+PLUS+1p:wght@400;600;800;900&display=swap" rel="stylesheet">
   <style>
@@ -73,7 +73,7 @@
       <div class="text-center relative z-20">
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/90 border border-slate-700 text-cyan-400 text-xs mb-2 font-bold tracking-wider">
           <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-          SWITCH JOY-CON & WIFI RELAY EDITION
+          JOY-CON & SCHOOL WIFI EDITION
         </div>
         <h1 class="font-neon text-3xl sm:text-4xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-rose-400 drop-shadow">
           NEON DUEL
@@ -114,22 +114,16 @@
           </div>
         </div>
 
-        <!-- Nintendo Switch Joy-Con / ゲームパッド接続パネル -->
-        <div class="p-3.5 rounded-2xl bg-slate-950/90 border border-indigo-500/40 space-y-2.5">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
-              <span>🎮</span> Nintendo Switch Joy-Con / コントローラー
-            </span>
-            <span id="gamepadStatusBadge" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">未接続</span>
-          </div>
-          <p class="text-[10px] text-slate-400 leading-tight">
-            PCやスマホのBluetooth設定からJoy-Conをペアリング後、任意のボタンを押して認識させてください。
-          </p>
-          <div id="connectedJoyconsList" class="space-y-1.5 text-xs font-mono">
-            <div class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 text-center text-[11px]">
-              コントローラーのボタンを何か押すと自動検出されます
+        <!-- ジョイコン / コントローラー接続状態バッジ -->
+        <div class="p-3 rounded-2xl bg-slate-950/90 border border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-base">🎮</span>
+            <div>
+              <span class="text-xs font-bold text-slate-200 block">コントローラー状態</span>
+              <span id="controllerStatusText" class="text-[10px] text-amber-400 font-mono">未接続 (何かボタンを押してください)</span>
             </div>
           </div>
+          <span id="controllerDot" class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
         </div>
 
         <!-- 学校Wi-Fi対応オンラインロビーパネル -->
@@ -272,25 +266,19 @@
     <div class="relative w-full max-w-xl bg-slate-900 border border-slate-700 rounded-3xl p-5 sm:p-7 shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
         <div class="flex items-center gap-2">
-          <span class="text-lg">📖</span>
-          <h3 class="font-neon text-lg sm:text-xl font-black text-cyan-400">Nintendo Switch Joy-Con & 遊び方</h3>
+          <span class="text-lg">🎮</span>
+          <h3 class="font-neon text-lg sm:text-xl font-black text-cyan-400">Joy-Con / コントローラー接続のコツ</h3>
         </div>
         <button type="button" id="btnCloseHowTo" class="p-1 px-3 rounded-lg bg-slate-800 text-slate-400 hover:text-white font-bold text-sm transition">✕</button>
       </div>
 
       <div class="space-y-3.5 text-xs sm:text-sm text-slate-300 leading-relaxed overflow-y-auto pr-1 custom-scrollbar">
         <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-          <div class="font-bold text-indigo-400">🎮 Nintendo Switch Joy-Conの使い方</div>
-          <ul class="list-disc list-inside space-y-1 text-slate-300">
-            <li>OSのBluetooth設定から「Joy-Con (L)/(R)」または「Proコントローラー」をペアリングします。</li>
-            <li>ホーム画面が表示されている状態で、コントローラーのスティックを動かしたりボタンを押すと自動検出されます。</li>
-            <li>1Pは1台目のゲームパッド（またはキーボード/マウス/タッチ）、2Pローカル対戦時は2台目のゲームパッドで操作できます！</li>
-          </ul>
-        </div>
-        <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-          <div class="font-bold text-sky-400">🌐 学校Wi-Fiでのオンライン対戦のコツ</div>
+          <div class="font-bold text-cyan-400">🕹️ Switch Joy-Conの使い方</div>
           <p class="text-xs text-slate-300 leading-relaxed">
-            学校のWi-Fiはセキュリティが厳しいため、P2P接続がブロックされることがあります。このバージョンでは<strong>TURNリレーサーバー（TLS 443ポート）</strong>を組み込んでいるため接続を通りやすくしていますが、もしそれでも繋がらない場合は、1台の端末やコントローラーを分けて対戦できる<strong>「2Pローカル対戦」</strong>をご利用ください！
+            1. Nintendo SwitchのJoy-ConやProコントローラーを、PCやスマホのBluetooth設定からペアリング・接続してください。<br>
+            2. ブラウザ上で何かボタン（Aボタンやスティックなど）を一度カチッと押すと、自動でコントローラーが認識され「接続完了」に変わります。<br>
+            3. 左スティック（または十字キー）で1Pマレットを操作できます。2Pローカル対戦の場合は2つ目のコントローラーで2P側を操作可能です！
           </p>
         </div>
       </div>
@@ -395,7 +383,7 @@
       <div id="footerTips" class="truncate">
         <span class="text-cyan-400 font-bold">1P:</span> Joy-Con / マウス / 矢印キー
         <span class="mx-1 text-slate-600">|</span>
-        <span class="text-rose-400 font-bold">2P/CPU:</span> 2Pパッド / [W,A,S,D]
+        <span class="text-rose-400 font-bold">2P/CPU:</span> 2Pコン / [W,A,S,D]
       </div>
       <div class="hidden sm:block text-slate-500 font-mono text-[10px]">
         NEON DUEL HOCKEY JOY-CON EDITION
@@ -415,9 +403,6 @@
 
     let p1ColorIndex = 0;
     let p2ColorIndex = 3;
-
-    // ゲームパッド管理
-    const connectedGamepads = new Map();
 
     const AudioEngine = {
       ctx: null,
@@ -552,6 +537,7 @@
     let homeScreen, howToModal, pausePopup, resultModal, goalBanner, disconnectToast;
     let scoreP1El, scoreP2El, p1HudBadge, p2HudBadge, resultHeading, resultSub, diffDesc;
     let pingBadge, pingVal;
+    let controllerStatusText, controllerDot;
 
     function resizeArena() {
       if (!arenaBox || !canvas) return;
@@ -676,94 +662,6 @@
       }
     }
 
-    function pollGamepads() {
-      const gps = navigator.getGamepads ? navigator.getGamepads() : [];
-      connectedGamepads.clear();
-      let activeCount = 0;
-
-      for (let i = 0; i < gps.length; i++) {
-        const gp = gps[i];
-        if (gp) {
-          connectedGamepads.set(i, gp);
-          activeCount++;
-        }
-      }
-
-      const badge = document.getElementById('gamepadStatusBadge');
-      const listEl = document.getElementById('connectedJoyconsList');
-      if (badge && listEl) {
-        if (activeCount > 0) {
-          badge.textContent = `${activeCount}台接続中`;
-          badge.className = 'text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono';
-          
-          let html = '';
-          connectedGamepads.forEach((gp, idx) => {
-            const name = gp.id.length > 28 ? gp.id.substring(0, 26) + '...' : gp.id;
-            html += `<div class="p-2 rounded-xl bg-slate-900 border border-indigo-500/40 text-indigo-200 flex items-center justify-between">
-              <span>🎮 [#${idx}] ${name}</span>
-              <span class="text-[10px] text-emerald-400 font-bold">接続OK</span>
-            </div>`;
-          });
-          listEl.innerHTML = html;
-        } else {
-          badge.textContent = '未接続';
-          badge.className = 'text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono';
-          listEl.innerHTML = `<div class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 text-center text-[11px]">コントローラーのボタンを何か押すと自動検出されます</div>`;
-        }
-      }
-    }
-
-    function processGamepadInputs() {
-      pollGamepads();
-      if (connectedGamepads.size === 0) return;
-
-      // 1P用コントローラー（0番またはリスト最初のパッド）
-      const gp1 = connectedGamepads.get(0) || connectedGamepads.values().next().value;
-      if (gp1) {
-        const deadzone = 0.15;
-        let ax = gp1.axes[0] !== undefined ? gp1.axes[0] : (gp1.axes[2] !== undefined ? gp1.axes[2] : 0);
-        let ay = gp1.axes[1] !== undefined ? gp1.axes[1] : (gp1.axes[3] !== undefined ? gp1.axes[3] : 0);
-
-        if (Math.abs(ax) < deadzone) ax = 0;
-        if (Math.abs(ay) < deadzone) ay = 0;
-
-        // D-pad (十字キー / Switch Joy-Conのボタン) 対応
-        if (gp1.buttons) {
-          if (gp1.buttons[14] && gp1.buttons[14].pressed) ax = -1; // 左
-          if (gp1.buttons[15] && gp1.buttons[15].pressed) ax = 1;  // 右
-          if (gp1.buttons[12] && gp1.buttons[12].pressed) ay = -1; // 上
-          if (gp1.buttons[13] && gp1.buttons[13].pressed) ay = 1;  // 下
-        }
-
-        if (ax !== 0 || ay !== 0) {
-          const moveSpeed = 11.0;
-          const prevX = barP1.x; const prevY = barP1.y;
-          barP1.x = Math.max(barP1.w / 2, Math.min(arenaW - barP1.w / 2, barP1.x + ax * moveSpeed));
-          barP1.y = Math.max(arenaH * 0.52, Math.min(arenaH - barP1.h / 2 - 6, barP1.y + ay * moveSpeed));
-          barP1.vx = barP1.x - prevX; barP1.vy = barP1.y - prevY;
-          if (gameMode === 'Online') sendOnlinePaddlePos();
-        }
-      }
-
-      // 2Pローカル対戦時、2台目のコントローラー（1番）があれば2Pを操作
-      if (gameMode === 'PvP' && connectedGamepads.has(1)) {
-        const gp2 = connectedGamepads.get(1);
-        const deadzone = 0.15;
-        let ax2 = gp2.axes[0] !== undefined ? gp2.axes[0] : 0;
-        let ay2 = gp2.axes[1] !== undefined ? gp2.axes[1] : 0;
-        if (Math.abs(ax2) < deadzone) ax2 = 0;
-        if (Math.abs(ay2) < deadzone) ay2 = 0;
-
-        if (ax2 !== 0 || ay2 !== 0) {
-          const moveSpeed = 11.0;
-          const prevX = barP2.x; const prevY = barP2.y;
-          barP2.x = Math.max(barP2.w / 2, Math.min(arenaW - barP2.w / 2, barP2.x + ax2 * moveSpeed));
-          barP2.y = Math.max(barP2.h / 2 + 6, Math.min(arenaH * 0.48, barP2.y + ay2 * moveSpeed));
-          barP2.vx = barP2.x - prevX; barP2.vy = barP2.y - prevY;
-        }
-      }
-    }
-
     function updateCpuAi() {
       if (gameMode !== 'PvC') return;
       const profile = {
@@ -817,6 +715,76 @@
 
       barP2.x = Math.max(barP2.w / 2, Math.min(arenaW - barP2.w / 2, barP2.x));
       barP2.y = Math.max(barP2.h / 2 + 4, Math.min(arenaH * 0.48, barP2.y));
+    }
+
+    // ==================== ゲームパッド (Joy-Con) 入力処理 ====================
+    let connectedGamepadsCount = 0;
+
+    function processGamepadInputs() {
+      const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+      let activeGps = 0;
+
+      for (let i = 0; i < gamepads.length; i++) {
+        const gp = gamepads[i];
+        if (!gp) continue;
+        activeGps++;
+
+        const deadzone = 0.15;
+        let ax = gp.axes[0] || 0;
+        let ay = gp.axes[1] || 1;
+        if (Math.abs(ax) < deadzone) ax = 0;
+        if (Math.abs(ay) < deadzone) ay = 0;
+
+        // 十字キー（Buttons 12, 13, 14, 15）のサポート
+        if (gp.buttons) {
+          if (gp.buttons[14] && gp.buttons[14].pressed) ax = -1; // 左
+          if (gp.buttons[15] && gp.buttons[15].pressed) ax = 1;  // 右
+          if (gp.buttons[12] && gp.buttons[12].pressed) ay = -1; // 上
+          if (gp.buttons[13] && gp.buttons[13].pressed) ay = 1;  // 下
+        }
+
+        const speed = 12.0;
+
+        if (i === 0) {
+          // 1Pコントローラー (画面下半分での移動)
+          if (ax !== 0 || ay !== 0) {
+            AudioEngine.init();
+            const p1dx = ax * speed;
+            const p1dy = ay * speed;
+            barP1.x = Math.max(barP1.w / 2, Math.min(arenaW - barP1.w / 2, barP1.x + p1dx));
+            barP1.y = Math.max(arenaH * 0.52, Math.min(arenaH - barP1.h / 2 - 6, barP1.y + p1dy));
+            barP1.vx = p1dx; barP1.vy = p1dy;
+            if (gameMode === 'Online') sendOnlinePaddlePos();
+          }
+        } else if (i === 1 && gameMode === 'PvP') {
+          // 2Pコントローラー (2Pローカル対戦時、画面上半分での移動)
+          if (ax !== 0 || ay !== 0) {
+            const p2dx = ax * speed;
+            const p2dy = ay * speed;
+            barP2.x = Math.max(barP2.w / 2, Math.min(arenaW - barP2.w / 2, barP2.x + p2dx));
+            barP2.y = Math.max(barP2.h / 2 + 6, Math.min(arenaH * 0.48, barP2.y + p2dy));
+            barP2.vx = p2dx; barP2.vy = p2dy;
+          }
+        }
+      }
+
+      if (controllerStatusText && controllerDot) {
+        if (activeGps > 0) {
+          if (connectedGamepadsCount !== activeGps) {
+            connectedGamepadsCount = activeGps;
+            controllerStatusText.textContent = `接続中: ${activeGps}台のコントローラー (Joy-Con等)`;
+            controllerStatusText.className = 'text-[10px] text-emerald-400 font-mono font-bold';
+            controllerDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
+          }
+        } else {
+          if (connectedGamepadsCount !== 0) {
+            connectedGamepadsCount = 0;
+            controllerStatusText.textContent = '未接続 (ボタンを押してください)';
+            controllerStatusText.className = 'text-[10px] text-amber-400 font-mono';
+            controllerDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse';
+          }
+        }
+      }
     }
 
     function handleTouchMove(e) {
@@ -875,7 +843,7 @@
     }
 
     function processKeyboardInputs() {
-      const speed = 9.0;
+      const speed = 9.5;
       let p1dx = 0, p1dy = 0;
 
       if (keys['ArrowLeft'] || (gameMode !== 'PvP' && (keys['a'] || keys['A']))) p1dx -= speed;
@@ -906,10 +874,10 @@
     }
 
     function tickPhysics() {
+      processGamepadInputs();
       if (isGameOver || isPaused || (homeScreen && !homeScreen.classList.contains('hidden'))) return;
 
       processKeyboardInputs();
-      processGamepadInputs();
 
       if (gameMode === 'Online' && !isOnlineHost) {
         if (remoteTarget.puckX) {
@@ -1042,6 +1010,7 @@
 
     function render() {
       if (!ctx || (homeScreen && !homeScreen.classList.contains('hidden'))) {
+        processGamepadInputs(); // ホーム画面でもコントローラー接続を監視
         requestAnimationFrame(render);
         return;
       }
@@ -1162,6 +1131,7 @@
       resetPuck(Math.random() > 0.5 ? 1 : 2);
     }
 
+    // ==================== 学校Wi-Fi対応・強固なPeerJS接続 ====================
     function initPeerInstance(onReady = null) {
       if (peer) {
         try { peer.destroy(); } catch (e) {}
@@ -1321,6 +1291,7 @@
       }, 2000);
     }
 
+    // ==================== UI初期化 ====================
     function renderPaletteOptions() {
       const p1PaletteEl = document.getElementById('p1ColorPalette');
       const p2PaletteEl = document.getElementById('p2ColorPalette');
@@ -1373,6 +1344,9 @@
       diffDesc = document.getElementById('diffDesc');
       pingBadge = document.getElementById('pingBadge');
       pingVal = document.getElementById('pingVal');
+
+      controllerStatusText = document.getElementById('controllerStatusText');
+      controllerDot = document.getElementById('controllerDot');
 
       const btnModeCpu = document.getElementById('btnModeCpu');
       const btnModeOnline = document.getElementById('btnModeOnline');
