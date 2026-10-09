@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>NEON DUEL HOCKEY - ONLINE P2P</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=M+PLUS+1p:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'M PLUS 1p', 'Orbitron', sans-serif;
+      background: radial-gradient(circle at center, #090f1f 0%, #030611 100%);
+      color: #f8fafc;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .font-neon {
+      font-family: 'Orbitron', monospace;
+    }
+    .neon-text-cyan {
+      text-shadow: 0 0 10px rgba(6, 182, 212, 0.8), 0 0 25px rgba(6, 182, 212, 0.4);
+    }
+    .neon-text-rose {
+      text-shadow: 0 0 10px rgba(244, 63, 94, 0.8), 0 0 25px rgba(244, 63, 94, 0.4);
+    }
+    .neon-border-cyan {
+      border-color: #06b6d4;
+      box-shadow: 0 0 18px rgba(6, 182, 212, 0.45);
+    }
+    .neon-border-rose {
+      border-color: #f43f5e;
+      box-shadow: 0 0 18px rgba(244, 63, 94, 0.45);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(56, 189, 248, 0.4);
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(56, 189, 248, 0.7);
+    }
+    button {
+      touch-action: manipulation !important;
+      cursor: pointer;
+    }
+    #gameCanvas {
+      touch-action: none;
+    }
+    .color-dot {
+      width: 38px;
+      height: 28px;
+      border-radius: 8px;
+      transition: all 0.15s ease-out;
+      border: 2px solid transparent;
+    }
+    .color-dot.active {
+      transform: scale(1.1);
+      box-shadow: 0 0 14px currentColor;
+      border-color: #ffffff;
+    }
+  </style>
+</head>
+<body class="relative w-screen h-screen flex flex-col items-center justify-center p-1 sm:p-3 overflow-hidden">
+
+  <!-- ==================== HOME SCREEN OVERLAY ==================== -->
+  <div id="homeScreen" class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
+    <div class="relative w-full max-w-md bg-slate-900/95 border border-slate-700/80 rounded-3xl shadow-2xl p-6 overflow-hidden flex flex-col justify-between my-auto z-10 max-h-[95vh] overflow-y-auto custom-scrollbar">
+      
+      <!-- Top Glowing Orbs -->
+      <div class="absolute -top-12 -left-12 w-44 h-44 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none -z-10"></div>
+      <div class="absolute -bottom-12 -right-12 w-44 h-44 bg-rose-500/20 rounded-full blur-3xl pointer-events-none -z-10"></div>
+
+      <!-- Header & Record Counter -->
+      <div class="text-center relative z-20">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/90 border border-slate-700 text-cyan-400 text-xs mb-2 font-bold tracking-wider">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+          ONLINE P2P MULTIPLAYER EDITION
+        </div>
+        <h1 class="font-neon text-3xl sm:text-4xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-rose-400 drop-shadow">
+          NEON DUEL
+        </h1>
+        <p class="font-neon text-[11px] tracking-widest text-slate-400 font-semibold mt-0.5">TACTICAL CYBER AIR HOCKEY</p>
+
+        <!-- Stats -->
+        <div class="mt-3 flex items-center justify-center gap-3 text-xs">
+          <div class="bg-slate-950/80 border border-slate-800 px-4 py-1.5 rounded-xl shadow-inner">
+            <span class="text-slate-400 text-[10px] block">通算勝利</span>
+            <span id="homeWins" class="font-neon font-bold text-cyan-400 text-sm">0勝</span>
+          </div>
+          <div class="bg-slate-950/80 border border-slate-800 px-4 py-1.5 rounded-xl shadow-inner">
+            <span class="text-slate-400 text-[10px] block">最高連勝</span>
+            <span id="homeStreak" class="font-neon font-bold text-amber-400 text-sm">0連勝</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Match Settings -->
+      <div class="my-4 space-y-3.5 relative z-20">
+        <!-- Game Mode Selection -->
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1.5">対戦モード</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" id="btnModeCpu" class="py-2 px-2 rounded-xl border-2 border-cyan-500 bg-cyan-500/20 text-cyan-300 font-bold text-xs flex flex-col items-center justify-center gap-1 transition shadow-lg shadow-cyan-950/50">
+              <span class="text-sm">🤖</span>
+              <span>VS CPU</span>
+            </button>
+            <button type="button" id="btnModeOnline" class="py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-slate-600">
+              <span class="text-sm">🌐</span>
+              <span>オンライン</span>
+            </button>
+            <button type="button" id="btnModePvp" class="py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-slate-600">
+              <span class="text-sm">👥</span>
+              <span>2Pローカル</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Online Lobby Panel (Shown only in Online Mode) -->
+        <div id="onlinePanel" class="hidden p-3.5 rounded-2xl bg-slate-950/90 border border-sky-500/40 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-sky-400 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span>
+              リアルタイムP2P通信 (STUN接続)
+            </span>
+            <span id="netStatusBadge" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">未接続</span>
+          </div>
+
+          <div class="space-y-2">
+            <div class="flex gap-2">
+              <button type="button" id="btnCreateRoom" class="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:brightness-110 text-white font-bold text-xs shadow transition">
+                部屋を作成する
+              </button>
+              <button type="button" id="btnJoinRoom" class="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs transition">
+                参加する
+              </button>
+            </div>
+
+            <!-- Host Room Info -->
+            <div id="hostInfoBox" class="hidden p-2.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2 text-center">
+              <div class="text-[11px] text-slate-400">あなたのルームID:</div>
+              <div id="myPeerIdDisplay" class="font-mono text-base font-black text-cyan-400 tracking-wider select-all py-1 bg-slate-950 rounded-lg border border-slate-800">
+                生成中...
+              </div>
+              <button type="button" id="btnCopyInvite" class="w-full py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 font-bold text-xs border border-sky-500/40 transition flex items-center justify-center gap-1">
+                <span>📋 招待リンクをコピー</span>
+              </button>
+              <p class="text-[10px] text-slate-500 animate-pulse">対戦相手の入室を待機しています...</p>
+            </div>
+
+            <!-- Join Room Input -->
+            <div id="joinInfoBox" class="hidden p-2.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+              <input type="text" id="targetPeerInput" placeholder="ルームIDを入力 (例: ND-XXXXX)" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-cyan-300 font-mono text-xs focus:outline-none focus:border-cyan-500 text-center uppercase">
+              <button type="button" id="btnConnectPeer" class="w-full py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition">
+                接続して対戦開始
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mallet Color Customizer -->
+        <div class="p-3 rounded-2xl bg-slate-950/70 border border-slate-800/90 space-y-2.5">
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1.5 font-bold">
+              <span class="text-slate-300 flex items-center gap-1.5">🎨 <span>あなたのマレット色 (1P)</span></span>
+              <span id="p1ColorLabel" class="font-neon text-cyan-400 font-bold">CYAN</span>
+            </div>
+            <div class="flex items-center justify-between gap-1.5" id="p1ColorPalette"></div>
+          </div>
+
+          <div id="p2ColorGroup" class="pt-2 border-t border-slate-800/80">
+            <div class="flex items-center justify-between text-xs mb-1.5 font-bold">
+              <span class="text-slate-300 flex items-center gap-1.5">⚡ <span id="p2ColorHeading">相手のマレット色 (CPU)</span></span>
+              <span id="p2ColorLabel" class="font-neon text-rose-400 font-bold">ROSE</span>
+            </div>
+            <div class="flex items-center justify-between gap-1.5" id="p2ColorPalette"></div>
+          </div>
+        </div>
+
+        <!-- CPU Difficulty Levels -->
+        <div id="diffSection">
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs font-bold text-slate-400">CPU難易度</label>
+            <span id="diffDesc" class="text-[11px] text-white font-bold">ふつう (バランス型)</span>
+          </div>
+          <div class="grid grid-cols-4 gap-1.5">
+            <button type="button" data-diff="easy" class="btn-diff py-2 rounded-xl bg-slate-800/90 text-emerald-400 text-xs font-bold border border-slate-700 hover:border-slate-600">かんたん</button>
+            <button type="button" data-diff="normal" class="btn-diff py-2 rounded-xl bg-white/20 text-white text-xs font-bold border-2 border-white shadow shadow-slate-900">ふつう</button>
+            <button type="button" data-diff="hard" class="btn-diff py-2 rounded-xl bg-slate-800/90 text-amber-400 text-xs font-bold border border-slate-700 hover:border-slate-600">強い</button>
+            <button type="button" data-diff="expert" class="btn-diff py-2 rounded-xl bg-slate-800/90 text-rose-500 text-xs font-bold border border-slate-700 hover:border-slate-600">激ムズ</button>
+          </div>
+        </div>
+
+        <!-- Match Point Target -->
+        <div id="ptsSection">
+          <label class="block text-xs font-bold text-slate-400 mb-1.5">勝利ポイント</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" data-pts="3" class="btn-pts py-2 rounded-xl bg-slate-800/90 text-slate-400 text-xs font-bold border border-slate-700">3点先取</button>
+            <button type="button" data-pts="5" class="btn-pts py-2 rounded-xl bg-cyan-500/20 text-cyan-300 text-xs font-bold border-2 border-cyan-500 shadow">5点先取</button>
+            <button type="button" data-pts="7" class="btn-pts py-2 rounded-xl bg-slate-800/90 text-slate-400 text-xs font-bold border border-slate-700">7点先取</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="space-y-2.5 relative z-20 pt-1">
+        <button type="button" id="btnStartGame" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 via-sky-400 to-blue-600 active:brightness-95 hover:brightness-110 text-slate-950 font-black font-neon rounded-2xl shadow-xl shadow-cyan-900/40 transition-transform active:scale-95 text-base tracking-wider flex items-center justify-center gap-2">
+          <span>START MATCH</span>
+          <span>⚡</span>
+        </button>
+
+        <div class="flex items-center gap-2">
+          <button type="button" id="btnHowToPlay" class="flex-1 py-2.5 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5">
+            <span>📖</span>
+            <span>遊び方・操作解説</span>
+          </button>
+          <button type="button" id="btnSoundToggle" class="px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 text-sm transition">
+            🔊
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== HOW TO PLAY MODAL ==================== -->
+  <div id="howToModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 hidden">
+    <div class="relative w-full max-w-xl bg-slate-900 border border-slate-700 rounded-3xl p-5 sm:p-7 shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">📖</span>
+          <h3 class="font-neon text-lg sm:text-xl font-black text-cyan-400">操作テクニック & ルール</h3>
+        </div>
+        <button type="button" id="btnCloseHowTo" class="p-1 px-3 rounded-lg bg-slate-800 text-slate-400 hover:text-white font-bold text-sm transition">✕</button>
+      </div>
+
+      <div class="space-y-3.5 text-xs sm:text-sm text-slate-300 leading-relaxed overflow-y-auto pr-1 custom-scrollbar">
+        <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+          <div class="font-bold text-cyan-400">🎮 1P / オンラインプレイヤーの操作</div>
+          <div class="text-xs text-slate-300 space-y-1">
+            <p>・<strong>マウス/タッチパッド:</strong> カーソル位置へマレットがスムーズに追従します。</p>
+            <p>・<strong>キーボード:</strong> 矢印キー [←][→][↑][↓] または [W][A][S][D]</p>
+            <p>・<strong>スマホ・タブレット:</strong> 画面の下半分を指でスワイプして操作。</p>
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+          <div class="font-bold text-sky-400">🌐 オンライン対戦のやり方</div>
+          <div class="text-xs text-slate-300 space-y-1">
+            <p>1. 「部屋を作成する」を押して発行されたルームID（または招待リンク）を対戦相手に伝えます。</p>
+            <p>2. 相手は「参加する」を選んでIDを入力するか、共有リンクをブラウザで開くだけで即座に対戦が始まります。</p>
+            <p>※安定したSTUN構成で高速・低遅延のP2Pマッチングを行います。</p>
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+          <div class="font-bold text-amber-400">⚡ 高速スマッシュ & コーナーショット</div>
+          <p class="text-xs text-slate-300">
+            パックが当たる瞬間にパドルを前へ押し出すように振ると、猛烈なスマッシュショットが炸裂！パドルの端で捉えると鋭い角度のバンクショットが狙えます。
+          </p>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-800 mt-2">
+        <button type="button" id="btnConfirmHowTo" class="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-slate-950 font-black font-neon rounded-xl transition text-xs sm:text-sm tracking-wider">
+          GOT IT / 理解した
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== GAME MATCH VIEW ==================== -->
+  <div id="gameView" class="relative w-full h-full max-w-5xl flex flex-col items-center justify-between p-1 sm:p-2.5 z-10">
+    
+    <!-- Top HUD Header -->
+    <header class="w-full flex items-center justify-between px-3 sm:px-5 py-2 bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-800 shadow-xl z-20 shrink-0">
+      <div class="flex items-center gap-2">
+        <button type="button" id="btnBackToHome" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition border border-slate-700/60">
+          <span>🏠</span>
+          <span class="hidden sm:inline">ホーム</span>
+        </button>
+        <span id="pingBadge" class="hidden text-[10px] font-mono px-2 py-1 rounded bg-slate-950 border border-slate-800 text-emerald-400">
+          Ping: <span id="pingVal">--</span>ms
+        </span>
+      </div>
+
+      <!-- Score Board -->
+      <div class="flex items-center space-x-4 font-neon">
+        <div class="flex items-center space-x-2">
+          <span id="p2HudBadge" class="text-[10px] sm:text-xs px-2 py-0.5 rounded font-bold border">CPU</span>
+          <span id="scoreP2El" class="text-2xl sm:text-3xl font-black min-w-[24px] text-center">0</span>
+        </div>
+        <span class="text-slate-600 font-bold text-xl sm:text-2xl">:</span>
+        <div class="flex items-center space-x-2">
+          <span id="scoreP1El" class="text-2xl sm:text-3xl font-black min-w-[24px] text-center">0</span>
+          <span id="p1HudBadge" class="text-[10px] sm:text-xs px-2 py-0.5 rounded font-bold border">1P</span>
+        </div>
+      </div>
+
+      <!-- Quick Action Controls -->
+      <div class="flex items-center space-x-1.5 sm:space-x-2">
+        <button type="button" id="btnGameSoundToggle" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700/60">
+          🔊
+        </button>
+        <button type="button" id="btnPauseMatch" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold border border-slate-700/60">
+          ⏸ 一時停止
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Spacious Canvas Arena -->
+    <main class="relative w-full flex-1 flex items-center justify-center my-1.5 sm:my-2 overflow-hidden min-h-0">
+      <div id="arenaBox" class="relative w-full h-full bg-slate-950 rounded-2xl sm:rounded-3xl overflow-hidden border-2 border-slate-700/90 shadow-2xl flex items-center justify-center ring-1 ring-cyan-500/20">
+        <canvas id="gameCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+        <!-- Goal Popup Animation -->
+        <div id="goalBanner" class="absolute pointer-events-none opacity-0 scale-50 transition-all duration-300 font-neon text-4xl sm:text-6xl font-black tracking-widest px-8 sm:px-12 py-3 rounded-2xl backdrop-blur-xl border border-white/20 shadow-2xl z-30">
+          GOAL!
+        </div>
+
+        <!-- Disconnect Toast -->
+        <div id="disconnectToast" class="absolute top-4 pointer-events-none hidden px-4 py-2 bg-rose-950/90 border border-rose-500 text-rose-300 rounded-xl text-xs font-bold shadow-xl z-40 transition animate-bounce">
+          ⚠️ 相手プレイヤーとの接続が切れました
+        </div>
+
+        <!-- Pause Modal -->
+        <div id="pausePopup" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm flex flex-col items-center justify-center hidden z-40 p-6 text-center">
+          <h3 class="font-neon text-2xl font-bold mb-4 text-cyan-400 tracking-wider">GAME PAUSED</h3>
+          <p class="text-xs text-slate-400 mb-5">戦略を整えて再開しましょう</p>
+          <div class="space-y-3 w-48">
+            <button type="button" id="btnResumeMatch" class="w-full py-2.5 bg-cyan-500 text-slate-950 font-bold font-neon rounded-xl hover:bg-cyan-400 transition text-sm shadow-lg shadow-cyan-950/50">
+              再開する
+            </button>
+            <button type="button" id="btnPauseReturnHome" class="w-full py-2 bg-slate-800 text-slate-300 font-semibold rounded-xl hover:bg-slate-700 transition text-xs border border-slate-700">
+              ホームへ戻る
+            </button>
+          </div>
+        </div>
+
+        <!-- Match Result Modal -->
+        <div id="resultModal" class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center hidden z-40 p-6 text-center">
+          <h2 id="resultHeading" class="font-neon text-3xl sm:text-4xl font-extrabold mb-2 tracking-wider">
+            YOU WIN!
+          </h2>
+          <p id="resultSub" class="text-slate-300 mb-6 text-xs sm:text-sm max-w-sm">
+            素晴らしいテクニックで見事勝利をつかみました！
+          </p>
+          <div class="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+            <button type="button" id="btnRematch" class="flex-1 font-neon py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-black rounded-xl shadow-lg transition active:scale-95 text-xs sm:text-sm">
+              もう一度遊ぶ
+            </button>
+            <button type="button" id="btnResultHome" class="flex-1 font-neon py-3 bg-slate-800 text-white font-bold rounded-xl shadow transition active:scale-95 text-xs sm:text-sm border border-slate-700">
+              ホームへ
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer Guide -->
+    <footer class="w-full flex items-center justify-between px-2 text-[11px] text-slate-400 shrink-0">
+      <div id="footerTips" class="truncate">
+        <span class="text-cyan-400 font-bold">1P:</span> マウス/タッチ/矢印キー
+        <span class="mx-1 text-slate-600">|</span>
+        <span class="text-rose-400 font-bold">2P:</span> タッチ/[W,A,S,D]キー
+      </div>
+      <div class="hidden sm:block text-slate-500 font-mono text-[10px]">
+        NEON DUEL HOCKEY P2P
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const PALETTES = [
+      { id: 'cyan',    name: 'CYAN',    hex: '#06b6d4', core: '#e0f2fe', glow: '#06b6d4' },
+      { id: 'emerald', name: 'EMERALD', hex: '#10b981', core: '#d1fae5', glow: '#10b981' },
+      { id: 'amber',   name: 'AMBER',   hex: '#f59e0b', core: '#fef3c7', glow: '#f59e0b' },
+      { id: 'rose',    name: 'ROSE',    hex: '#f43f5e', core: '#ffe4e6', glow: '#f43f5e' },
+      { id: 'violet',  name: 'VIOLET',  hex: '#8b5cf6', core: '#ede9fe', glow: '#8b5cf6' },
+      { id: 'gold',    name: 'GOLD',    hex: '#eab308', core: '#fef9c3', glow: '#eab308' }
+    ];
+
+    let p1ColorIndex = 0;
+    let p2ColorIndex = 3;
+
+    const AudioEngine = {
+      ctx: null,
+      enabled: true,
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      },
+
+      toggle() {
+        this.enabled = !this.enabled;
+        return this.enabled;
+      },
+
+      playHit(freq = 440, duration = 0.06) {
+        if (!this.enabled || !this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + duration);
+          gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch (e) {}
+      },
+
+      playWall() {
+        this.playHit(230, 0.05);
+      },
+
+      playPaddle(speedRatio = 1) {
+        const freq = 420 + Math.min(speedRatio * 260, 650);
+        this.playHit(freq, 0.07);
+      },
+
+      playGoal() {
+        if (!this.enabled || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(260, now);
+          osc.frequency.linearRampToValueAtTime(740, now + 0.3);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.45);
+        } catch (e) {}
+      },
+
+      playWin() {
+        if (!this.enabled || !this.ctx) return;
+        try {
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const t = this.ctx.currentTime + i * 0.09;
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, t);
+            gain.gain.setValueAtTime(0.2, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(t);
+            osc.stop(t + 0.25);
+          });
+        } catch (e) {}
+      }
+    };
+
+    const Records = {
+      get() {
+        const fallback = { wins: 0, streak: 0, maxStreak: 0 };
+        try {
+          const raw = localStorage.getItem('neon_duel_stats');
+          return raw ? Object.assign(fallback, JSON.parse(raw)) : fallback;
+        } catch (e) {
+          return fallback;
+        }
+      },
+      save(data) {
+        try {
+          localStorage.setItem('neon_duel_stats', JSON.stringify(data));
+        } catch (e) {}
+      },
+      addWin() {
+        const data = this.get();
+        data.wins++;
+        data.streak++;
+        if (data.streak > data.maxStreak) data.maxStreak = data.streak;
+        this.save(data);
+        this.refreshUI();
+      },
+      resetStreak() {
+        const data = this.get();
+        data.streak = 0;
+        this.save(data);
+        this.refreshUI();
+      },
+      refreshUI() {
+        const data = this.get();
+        const winsEl = document.getElementById('homeWins');
+        const streakEl = document.getElementById('homeStreak');
+        if (winsEl) winsEl.textContent = `${data.wins}勝`;
+        if (streakEl) streakEl.textContent = `${data.maxStreak}連勝`;
+      }
+    };
+
+    let gameMode = 'PvC';
+    let isOnlineHost = false;
+    let peer = null;
+    let peerConn = null;
+    let lastPingSendTime = 0;
+    let currentPing = 0;
+
+    let cpuDifficulty = 'normal';
+    let targetScore = 5;
+    let scoreP1 = 0;
+    let scoreP2 = 0;
+    let isGameOver = false;
+    let isPaused = false;
+    let screenShake = 0;
+
+    let arenaW = 0;
+    let arenaH = 0;
+    let goalW = 0;
+    let goalH = 10;
+
+    const keys = {};
+    const particles = [];
+
+    const puck = {
+      x: 0,
+      y: 0,
+      radius: 6.8,
+      vx: 0,
+      vy: 0,
+      maxSpeed: 22.0,
+      trail: [],
+      maxTrail: 12
+    };
+
+    const barP1 = {
+      x: 0,
+      y: 0,
+      w: 56,
+      h: 12,
+      vx: 0,
+      vy: 0,
+      color: PALETTES[0]
+    };
+
+    const barP2 = {
+      x: 0,
+      y: 0,
+      w: 56,
+      h: 12,
+      vx: 0,
+      vy: 0,
+      color: PALETTES[3]
+    };
+
+    const remoteTarget = {
+      puckX: 0,
+      puckY: 0,
+      p2X: 0,
+      p2Y: 0,
+      p1X: 0,
+      p1Y: 0
+    };
+
+    let canvas, ctx, arenaBox;
+    let homeScreen, howToModal, pausePopup, resultModal, goalBanner, disconnectToast;
+    let scoreP1El, scoreP2El, p1HudBadge, p2HudBadge, resultHeading, resultSub, diffDesc;
+    let pingBadge, pingVal;
+
+    function resizeArena() {
+      if (!arenaBox || !canvas) return;
+      const rect = arenaBox.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+
+      arenaW = rect.width;
+      arenaH = rect.height;
+
+      canvas.width = arenaW * dpr;
+      canvas.height = arenaH * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      goalW = Math.max(arenaW * 0.20, 88);
+      goalH = 10;
+
+      const paddleW = Math.max(arenaW * 0.10, 52);
+      const paddleH = Math.max(arenaH * 0.019, 11);
+      barP1.w = paddleW;
+      barP1.h = paddleH;
+      barP2.w = paddleW;
+      barP2.h = paddleH;
+
+      puck.radius = Math.max(paddleH * 0.58, 6.8);
+
+      barP1.x = Math.max(barP1.w / 2, Math.min(arenaW - barP1.w / 2, barP1.x || arenaW / 2));
+      barP1.y = Math.max(arenaH * 0.54, Math.min(arenaH - barP1.h / 2 - 8, barP1.y || arenaH * 0.88));
+
+      barP2.x = Math.max(barP2.w / 2, Math.min(arenaW - barP2.w / 2, barP2.x || arenaW / 2));
+      barP2.y = Math.max(barP2.h / 2 + 8, Math.min(arenaH * 0.46, barP2.y || arenaH * 0.12));
+
+      if (puck.x === 0 && puck.y === 0) {
+        resetPuck(1);
+      }
+    }
+
+    function resetPuck(servingPlayer = 1) {
+      puck.x = arenaW / 2;
+      puck.y = arenaH / 2;
+      puck.trail = [];
+
+      const angle = (servingPlayer === 1 ? Math.PI / 2 : -Math.PI / 2) + (Math.random() * 0.6 - 0.3);
+      const initSpeed = Math.min(arenaH * 0.0055, 5.5);
+      puck.vx = Math.cos(angle) * initSpeed;
+      puck.vy = Math.sin(angle) * initSpeed;
+    }
+
+    function spawnSparks(x, y, color, count = 12) {
+      if (particles.length > 150) return;
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = 1.0 + Math.random() * 4.5;
+        particles.push({
+          x, y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          radius: Math.random() * 2.0 + 1.0,
+          color,
+          alpha: 1,
+          decay: 0.025 + Math.random() * 0.03
+        });
+      }
+    }
+
+    function triggerShake(intensity = 6) {
+      screenShake = intensity;
+    }
+
+    function displayGoalToast(scorer) {
+      if (!goalBanner) return;
+      const isP1 = scorer === 'P1';
+      const col = isP1 ? barP1.color : barP2.color;
+      goalBanner.textContent = 'GOAL!';
+      goalBanner.style.color = col.hex;
+      goalBanner.style.borderColor = col.hex;
+      goalBanner.style.boxShadow = `0 0 25px ${col.glow}`;
+      goalBanner.style.backgroundColor = 'rgba(2, 6, 23, 0.85)';
+      goalBanner.className = 'absolute pointer-events-none font-neon text-4xl sm:text-6xl font-black tracking-widest px-8 sm:px-12 py-3 rounded-2xl backdrop-blur-xl border shadow-2xl transition-all duration-300 scale-110 opacity-100 z-30';
+
+      setTimeout(() => {
+        goalBanner.style.opacity = '0';
+        goalBanner.style.transform = 'scale(0.5)';
+      }, 700);
+    }
+
+    function resolvePaddleCollision(puckObj, bar) {
+      const halfW = bar.w / 2;
+      const halfH = bar.h / 2;
+
+      const cx = Math.max(bar.x - halfW, Math.min(puckObj.x, bar.x + halfW));
+      const cy = Math.max(bar.y - halfH, Math.min(puckObj.y, bar.y + halfH));
+
+      let dx = puckObj.x - cx;
+      let dy = puckObj.y - cy;
+      let dist = Math.hypot(dx, dy);
+
+      if (dist < puckObj.radius) {
+        let nx = 0, ny = 0;
+        if (dist === 0 || dist < 0.0001) {
+          ny = puckObj.y < bar.y ? -1 : 1;
+        } else {
+          nx = dx / dist;
+          ny = dy / dist;
+        }
+
+        const penetration = puckObj.radius - dist;
+        puckObj.x += nx * (penetration + 0.8);
+        puckObj.y += ny * (penetration + 0.8);
+
+        const rvx = puckObj.vx - bar.vx;
+        const rvy = puckObj.vy - bar.vy;
+        const velAlongNormal = rvx * nx + rvy * ny;
+
+        if (velAlongNormal < 0) {
+          const restitution = 1.15;
+          const impulse = -(1 + restitution) * velAlongNormal;
+
+          puckObj.vx += nx * impulse + bar.vx * 0.45;
+          puckObj.vy += ny * impulse + bar.vy * 0.45;
+
+          const hitOffsetRatio = (puckObj.x - bar.x) / halfW;
+          puckObj.vx += hitOffsetRatio * 3.4;
+
+          const speed = Math.hypot(puckObj.vx, puckObj.vy);
+          if (speed > puckObj.maxSpeed) {
+            const factor = puckObj.maxSpeed / speed;
+            puckObj.vx *= factor;
+            puckObj.vy *= factor;
+          }
+
+          AudioEngine.playPaddle(speed / 9);
+          spawnSparks(cx, cy, bar.color.glow, 12);
+          triggerShake(3.5);
+        } else {
+          puckObj.vx += bar.vx * 0.25;
+          puckObj.vy += bar.vy * 0.25;
+        }
+      }
+    }
+
+    function updateCpuAi() {
+      if (gameMode !== 'PvC') return;
+
+      const profile = {
+        easy:   { speed: 4.8, predict: 0.22, line: 0.14, jitter: 12 },
+        normal: { speed: 7.8, predict: 0.58, line: 0.16, jitter: 5 },
+        hard:   { speed: 10.6, predict: 0.90, line: 0.20, jitter: 1.5 },
+        expert: { speed: 13.8, predict: 1.00, line: 0.24, jitter: 0 }
+      }[cpuDifficulty];
+
+      let targetX = arenaW / 2;
+      let targetY = arenaH * profile.line;
+
+      const isBehind = puck.y < barP2.y + barP2.h / 2 && puck.y > 0;
+
+      if (isBehind) {
+        if (puck.y > goalH + puck.radius + 12) {
+          targetY = Math.max(goalH + barP2.h / 2 + 2, puck.y - barP2.h / 2 - 8);
+          targetX = puck.x;
+        } else {
+          const center = arenaW / 2;
+          targetX = puck.x < center ? puck.x + barP2.w / 2 + 6 : puck.x - barP2.w / 2 - 6;
+          targetY = Math.max(goalH + barP2.h / 2 + 2, puck.y);
+        }
+      } else {
+        const isApproaching = puck.vy < 0 && puck.y < arenaH * 0.78;
+        if (isApproaching || puck.y < arenaH * 0.48) {
+          const time = Math.max(0.1, (barP2.y - puck.y) / Math.min(-1, puck.vy));
+          let predX = puck.x + puck.vx * time * profile.predict;
+
+          if (predX < puck.radius) predX = puck.radius + Math.abs(predX);
+          else if (predX > arenaW - puck.radius) predX = (arenaW - puck.radius) - (predX - (arenaW - puck.radius));
+
+          predX += (Math.random() - 0.5) * profile.jitter;
+          targetX = Math.max(barP2.w / 2, Math.min(arenaW - barP2.w / 2, predX));
+
+          if (puck.y < arenaH * 0.48 && puck.y > barP2.y) {
+            targetY = Math.min(arenaH * 0.48, puck.y + 6);
+          } else {
+            targetY = Math.max(barP2.h / 2 + goalH + 4, arenaH * profile.line);
+          }
+        } else {
+          targetX = arenaW / 2 + Math.sin(Date.now() * 0.002) * (arenaW * 0.22);
+          targetY = arenaH * profile.line;
+        }
+      }
+
+      const dx = targetX - barP2.x;
+      const dy = targetY - barP2.y;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist > 1.5) {
+        const step = Math.min(dist, profile.speed);
+        barP2.vx = (dx / dist) * step;
+        barP2.vy = (dy / dist) * step;
+        barP2.x += barP2.vx;
+        barP2.y += barP2.vy;
+      } else {
+        barP2.vx = 0;
+        barP2.vy = 0;
+      }
+
+      barP2.x = Math.max(barP2.w / 2, Math.min(arenaW - barP2.w / 2, barP2.x));
+      barP2.y = Math.max(barP2.h / 2 + 4, Math.min(arenaH * 0.48, barP2.y));
+    }
+
+    function handleTouchMove(e) {
+      if (homeScreen && !homeScreen.classList.contains('hidden')) return;
+      e.preventDefault();
+      AudioEngine.init();
+      const rect = canvas.getBoundingClientRect();
+
+      for (let i = 0; i < e.touches.length; i++) {
+        const t = e.touches[i];
+        const tx = t.clientX - rect.left;
+        const ty = t.clientY - rect.top;
+
+        if (gameMode === 'Online') {
+          const prevX = barP1.x;
+          const prevY = barP1.y;
+          barP1.x = Math.max(barP1.w / 2, Math.min(arenaW - barP1.w / 2, tx));
+          barP1.y = Math.max(arenaH * 0.52, Math.min(arenaH - barP1.h / 2 - 6, ty));
+          barP1.vx = barP1.x - prevX;
+          barP1.vy = barP1.y - prevY;
+          sendOnlinePaddlePos();
+        } else {
+          if (ty >= arenaH * 0.5) {
+            const prevX = barP1.x;
+            const prevY = barP1.y;
+            barP1.x = Math.max(barP1.w / 2, Math.min(arenaW - barP1.w / 2, tx));
+            barP1.y = Math.max(arenaH * 0.52, Math.min(arenaH - barP1.h / 2 - 6, ty));
+            barP1.vx = barP1.x - prevX;
+            barP1.vy = barP1.y - prevY;
+          } else if (gameMode === 'PvP' && ty < arenaH * 0.5) {
+            const prevX = barP2.x;
+            const prevY = barP2.y;
+            barP2.x = Math.max(barP2.w / 2, Math.min(arenaW - barP2.w / 2, tx));
+            barP2.y = Math.max(barP2.h / 2 + 6, Math.min(arenaH * 0.48, ty));
+            barP2.vx = barP2.x - prevX;
+            barP2.vy = barP2.y - prevY;
+          }
+        }
+      }
+    }
+
+    function setupCanvasInputs() {
+      canvas.addEventListener('touchstart', handleTouchMove, { passive: false });
+      canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+      canvas.addEventListener('mousemove', (e) => {
+        if (homeScreen && !homeScreen.classList.contains('hidden')) return;
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+
+        const prevX = barP1.x;
+        const prevY = barP1.y;
+        barP1.x = Math.max(barP1.w / 2, Math.min(arenaW - barP1.w / 2, mx));
+        barP1.y = Math.max(arenaH * 0.52, Math.min(arenaH - barP1.h / 2 - 6, my));
+        barP1.vx = barP1.x - prevX;
+        barP1.vy = barP1.y - prevY;
+
+        if (gameMode === 'Online') {
+          sendOnlinePaddlePos();
+        }
+      });
+
+      window.addEventListener('keydown', (e) => {
+        AudioEngine.init();
+        keys[e.key] = true;
+      });
+
+      window.addEventListener('keyup', (e) => {
+        keys[e.key] = false;
+      });
+    }
+
+    function processKeyboardInputs() {
+      const speed = 8.5;
+      let p1dx = 0, p1dy = 0;
+
+      if (keys['ArrowLeft'] || (gameMode !== 'PvP' && (keys['a'] || keys['A']))) p1dx -= speed;
+      if (keys['ArrowRight'] || (gameMode !== 'PvP' && (keys['d'] || keys['D']))) p1dx += speed;
+      if (keys['ArrowUp'] || (gameMode !== 'PvP' && (keys['w'] || keys['W']))) p1dy -= speed;
+      if (keys['ArrowDown'] || (gameMode !== 'PvP' && (keys['s'] || keys['S']))) p1dy += speed;
+
+      if (p1dx !== 0 || p1dy !== 0) {
+        barP1.x = Math.max(barP1.w / 2, Math.min(arenaW - barP1.w / 2, barP1.x + p1dx));
+        barP1.y = Math.max(arenaH * 0.52, Math.min(arenaH - barP1.h / 2 - 6, barP1.y + p1dy));
+        barP1.vx = p1dx;
+        barP1.vy = p1dy;
+
+        if (gameMode === 'Online') {
+          sendOnlinePaddlePos();
+        }
+      }
+
+      if (gameMode === 'PvP') {
+        let p2dx = 0, p2dy = 0;
+        if (keys['a'] || keys['A'] || keys['j'] || keys['J']) p2dx -= speed;
+        if (keys['d'] || keys['D'] || keys['l'] || keys['L']) p2dx += speed;
+        if (keys['w'] || keys['W'] || keys['i'] || keys['I']) p2dy -= speed;
+        if (keys['s'] || keys['S'] || keys['k'] || keys['K']) p2dy += speed;
+
+        if (p2dx !== 0 || p2dy !== 0) {
+          barP2.x = Math.max(barP2.w / 2, Math.min(arenaW - barP2.w / 2, barP2.x + p2dx));
+          barP2.y = Math.max(barP2.h / 2 + 6, Math.min(arenaH * 0.48, barP2.y + p2dy));
+          barP2.vx = p2dx;
+          barP2.vy = p2dy;
+        }
+      }
+    }
+
+    function tickPhysics() {
+      if (isGameOver || isPaused || (homeScreen && !homeScreen.classList.contains('hidden'))) return;
+
+      processKeyboardInputs();
+
+      if (gameMode === 'Online' && !isOnlineHost) {
+        if (remoteTarget.puckX) {
+          puck.x += (remoteTarget.puckX - puck.x) * 0.45;
+          puck.y += (remoteTarget.puckY - puck.y) * 0.45;
+          barP2.x += (remoteTarget.p2X - barP2.x) * 0.5;
+          barP2.y += (remoteTarget.p2Y - barP2.y) * 0.5;
+        }
+      } else {
+        updateCpuAi();
+
+        if (gameMode === 'Online' && isOnlineHost && remoteTarget.p2X) {
+          barP2.x += (remoteTarget.p2X - barP2.x) * 0.6;
+          barP2.y += (remoteTarget.p2Y - barP2.y) * 0.6;
+        }
+
+        barP1.vx *= 0.85;
+        barP1.vy *= 0.85;
+        if (gameMode === 'PvP') {
+          barP2.vx *= 0.85;
+          barP2.vy *= 0.85;
+        }
+
+        const SUB_STEPS = 8;
+        const dt = 1 / SUB_STEPS;
+        const goalLeft = (arenaW - goalW) / 2;
+        const goalRight = goalLeft + goalW;
+
+        let goalTriggered = false;
+
+        for (let s = 0; s < SUB_STEPS; s++) {
+          puck.x += puck.vx * dt;
+          puck.y += puck.vy * dt;
+
+          if (puck.x - puck.radius <= 0) {
+            puck.x = puck.radius;
+            if (puck.vx < 0) {
+              puck.vx = -puck.vx * 0.98;
+              AudioEngine.playWall();
+              spawnSparks(puck.x, puck.y, '#38bdf8', 5);
+            }
+          } else if (puck.x + puck.radius >= arenaW) {
+            puck.x = arenaW - puck.radius;
+            if (puck.vx > 0) {
+              puck.vx = -puck.vx * 0.98;
+              AudioEngine.playWall();
+              spawnSparks(puck.x, puck.y, '#38bdf8', 5);
+            }
+          }
+
+          if (puck.y - puck.radius <= 0) {
+            if (puck.x >= goalLeft + puck.radius * 0.5 && puck.x <= goalRight - puck.radius * 0.5) {
+              if (!goalTriggered) {
+                goalTriggered = true;
+                scoreP1++;
+                scoreP1El.textContent = scoreP1;
+                AudioEngine.playGoal();
+                triggerShake(13);
+                displayGoalToast('P1');
+                spawnSparks(puck.x, puck.y, barP1.color.glow, 28);
+                if (gameMode === 'Online') sendOnlineGoalEvent('P1');
+                verifyMatchWinner();
+                if (!isGameOver) resetPuck(2);
+              }
+              break;
+            } else {
+              puck.y = puck.radius;
+              if (puck.vy < 0) {
+                puck.vy = -puck.vy * 0.98;
+                AudioEngine.playWall();
+                spawnSparks(puck.x, puck.y, '#94a3b8', 4);
+              }
+            }
+          }
+
+          if (puck.y + puck.radius >= arenaH) {
+            if (puck.x >= goalLeft + puck.radius * 0.5 && puck.x <= goalRight - puck.radius * 0.5) {
+              if (!goalTriggered) {
+                goalTriggered = true;
+                scoreP2++;
+                scoreP2El.textContent = scoreP2;
+                AudioEngine.playGoal();
+                triggerShake(13);
+                displayGoalToast('P2');
+                spawnSparks(puck.x, puck.y, barP2.color.glow, 28);
+                if (gameMode === 'Online') sendOnlineGoalEvent('P2');
+                verifyMatchWinner();
+                if (!isGameOver) resetPuck(1);
+              }
+              break;
+            } else {
+              puck.y = arenaH - puck.radius;
+              if (puck.vy > 0) {
+                puck.vy = -puck.vy * 0.98;
+                AudioEngine.playWall();
+                spawnSparks(puck.x, puck.y, '#94a3b8', 4);
+              }
+            }
+          }
+
+          resolvePaddleCollision(puck, barP1);
+          resolvePaddleCollision(puck, barP2);
+        }
+
+        puck.vx *= 0.9985;
+        puck.vy *= 0.9985;
+
+        if (gameMode === 'Online' && isOnlineHost && peerConn && peerConn.open) {
+          peerConn.send({
+            t: 'state',
+            px: puck.x / arenaW,
+            py: (arenaH - puck.y) / arenaH,
+            p1x: (arenaW - barP1.x) / arenaW,
+            p1y: (arenaH - barP1.y) / arenaH,
+            s1: scoreP2,
+            s2: scoreP1
+          });
+        }
+      }
+
+      puck.trail.push({ x: puck.x, y: puck.y });
+      if (puck.trail.length > puck.maxTrail) puck.trail.shift();
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= p.decay;
+        if (p.alpha <= 0) particles.splice(i, 1);
+      }
+
+      if (screenShake > 0) {
+        screenShake *= 0.88;
+        if (screenShake < 0.2) screenShake = 0;
+      }
+    }
+
+    function verifyMatchWinner() {
+      if (scoreP1 >= targetScore || scoreP2 >= targetScore) {
+        isGameOver = true;
+        AudioEngine.playWin();
+        resultModal.classList.remove('hidden');
+
+        if (scoreP1 >= targetScore) {
+          resultHeading.textContent = 'VICTORY! 🏆';
+          resultHeading.style.color = barP1.color.hex;
+          resultSub.textContent = 'スピードと技巧で完全勝利を掴み取りました！';
+          if (gameMode === 'PvC') Records.addWin();
+        } else {
+          resultHeading.textContent = gameMode === 'PvC' ? 'CPU WINS! 🤖' : 'OPPONENT WINS! 👑';
+          resultHeading.style.color = barP2.color.hex;
+          resultSub.textContent = '白熱の攻防の末に惜敗…！リベンジを果たしましょう！';
+          if (gameMode === 'PvC') Records.resetStreak();
+        }
+      }
+    }
+
+    function render() {
+      if (!ctx || (homeScreen && !homeScreen.classList.contains('hidden'))) {
+        requestAnimationFrame(render);
+        return;
+      }
+
+      tickPhysics();
+
+      ctx.save();
+
+      if (screenShake > 0) {
+        const sx = (Math.random() - 0.5) * screenShake * 2;
+        const sy = (Math.random() - 0.5) * screenShake * 2;
+        ctx.translate(sx, sy);
+      }
+
+      // Background Field
+      ctx.fillStyle = '#030712';
+      ctx.fillRect(0, 0, arenaW, arenaH);
+
+      const goalLeft = (arenaW - goalW) / 2;
+
+      // Top Goal
+      ctx.save();
+      ctx.shadowColor = barP2.color.glow;
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = `${barP2.color.hex}33`;
+      ctx.fillRect(goalLeft, 0, goalW, goalH);
+      ctx.strokeStyle = barP2.color.hex;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(goalLeft, 0, goalW, goalH);
+      ctx.restore();
+
+      // Bottom Goal
+      ctx.save();
+      ctx.shadowColor = barP1.color.glow;
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = `${barP1.color.hex}33`;
+      ctx.fillRect(goalLeft, arenaH - goalH, goalW, goalH);
+      ctx.strokeStyle = barP1.color.hex;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(goalLeft, arenaH - goalH, goalW, goalH);
+      ctx.restore();
+
+      // Goal Defense Zones
+      ctx.strokeStyle = `${barP2.color.hex}44`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(arenaW / 2, 0, goalW * 0.70, 0, Math.PI);
+      ctx.stroke();
+
+      ctx.strokeStyle = `${barP1.color.hex}44`;
+      ctx.beginPath();
+      ctx.arc(arenaW / 2, arenaH, goalW * 0.70, Math.PI, Math.PI * 2);
+      ctx.stroke();
+
+      // Center Line & Center Ring
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([8, 8]);
+      ctx.beginPath();
+      ctx.moveTo(0, arenaH / 2);
+      ctx.lineTo(arenaW, arenaH / 2);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(arenaW / 2, arenaH / 2, arenaW * 0.12, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // Side Wall Highlights
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(1, 0); ctx.lineTo(1, arenaH);
+      ctx.moveTo(arenaW - 1, 0); ctx.lineTo(arenaW - 1, arenaH);
+      ctx.stroke();
+
+      // Puck Trail
+      for (let i = 0; i < puck.trail.length; i++) {
+        const pt = puck.trail[i];
+        const progress = (i + 1) / puck.trail.length;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, puck.radius * (0.35 + progress * 0.65), 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(250, 204, 21, ${progress * 0.25})`;
+        ctx.fill();
+      }
+
+      // Puck Body
+      ctx.save();
+      ctx.shadowColor = '#facc15';
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(puck.x, puck.y, puck.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#eab308';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+
+      // Paddles
+      function drawPaddle(bar) {
+        ctx.save();
+        ctx.shadowColor = bar.color.glow;
+        ctx.shadowBlur = 14;
+
+        const bx = bar.x - bar.w / 2;
+        const by = bar.y - bar.h / 2;
+        const rad = bar.h / 2;
+
+        ctx.fillStyle = bar.color.hex;
+        ctx.beginPath();
+        ctx.roundRect(bx, by, bar.w, bar.h, rad);
+        ctx.fill();
+
+        ctx.fillStyle = bar.color.core;
+        ctx.beginPath();
+        ctx.roundRect(bx + 2.5, by + 2, bar.w - 5, bar.h - 4, rad * 0.7);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      drawPaddle(barP2);
+      drawPaddle(barP1);
+
+      // Sparks
+      for (const p of particles) {
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.restore();
+      requestAnimationFrame(render);
+    }
+
+    function updateBadgeStyles() {
+      if (!p1HudBadge || !p2HudBadge) return;
+
+      p1HudBadge.style.color = barP1.color.hex;
+      p1HudBadge.style.borderColor = `${barP1.color.hex}66`;
+      p1HudBadge.style.backgroundColor = `${barP1.color.hex}22`;
+      scoreP1El.style.color = barP1.color.hex;
+      scoreP1El.style.textShadow = `0 0 12px ${barP1.color.glow}`;
+
+      p2HudBadge.style.color = barP2.color.hex;
+      p2HudBadge.style.borderColor = `${barP2.color.hex}66`;
+      p2HudBadge.style.backgroundColor = `${barP2.color.hex}22`;
+      scoreP2El.style.color = barP2.color.hex;
+      scoreP2El.style.textShadow = `0 0 12px ${barP2.color.glow}`;
+
+      if (gameMode === 'PvP') {
+        p2HudBadge.textContent = '2P';
+      } else if (gameMode === 'Online') {
+        p2HudBadge.textContent = 'RIVAL';
+      } else {
+        const dNames = { easy: 'かんたん', normal: 'ふつう', hard: '強い', expert: '激ムズ' };
+        p2HudBadge.textContent = `CPU: ${dNames[cpuDifficulty]}`;
+      }
+    }
+
+    function resetMatchSession() {
+      scoreP1 = 0;
+      scoreP2 = 0;
+      scoreP1El.textContent = '0';
+      scoreP2El.textContent = '0';
+      isGameOver = false;
+      isPaused = false;
+      if (pausePopup) pausePopup.classList.add('hidden');
+      if (resultModal) resultModal.classList.add('hidden');
+      updateBadgeStyles();
+      resetPuck(Math.random() > 0.5 ? 1 : 2);
+    }
+
+    // ==================== ONLINE PEERJS NETWORKING ====================
+    function generateRoomCode() {
+      const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+      let code = '';
+      for (let i = 0; i < 5; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return 'ND-' + code;
+    }
+
+    function initPeerInstance(desiredId = null, onReady = null) {
+      if (peer) {
+        try { peer.destroy(); } catch (e) {}
+      }
+
+      // 安定性の高いSTUNサーバー設定
+      const peerConfig = {
+        debug: 1,
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
+          ]
+        }
+      };
+
+      const finalId = desiredId || generateRoomCode();
+
+      try {
+        peer = new Peer(finalId, peerConfig);
+
+        peer.on('open', (id) => {
+          const netStatusBadge = document.getElementById('netStatusBadge');
+          if (netStatusBadge) {
+            netStatusBadge.textContent = 'オンライン準備OK';
+            netStatusBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono';
+          }
+          if (onReady) onReady(id);
+        });
+
+        peer.on('connection', (conn) => {
+          isOnlineHost = true;
+          setupPeerConnection(conn);
+        });
+
+        peer.on('error', (err) => {
+          console.error('PeerJS エラー詳細:', err);
+          const netStatusBadge = document.getElementById('netStatusBadge');
+          if (netStatusBadge) {
+            let reason = err.type || '接続失敗';
+            if (err.type === 'peer-unavailable') reason = '部屋IDが見つかりません';
+            else if (err.type === 'network') reason = 'ネットワーク未接続';
+            else if (err.type === 'server-error') reason = 'サーバー接続障害';
+            else if (err.type === 'browser-incompatible') reason = '非対応ブラウザ';
+
+            netStatusBadge.textContent = `通信エラー (${reason})`;
+            netStatusBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 font-mono';
+          }
+        });
+      } catch (e) {
+        console.error('Peer初期化失敗:', e);
+      }
+    }
+
+    function setupPeerConnection(conn) {
+      peerConn = conn;
+
+      conn.on('open', () => {
+        const netStatusBadge = document.getElementById('netStatusBadge');
+        if (netStatusBadge) {
+          netStatusBadge.textContent = '対戦接続中！';
+          netStatusBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono animate-pulse';
+        }
+
+        conn.send({
+          t: 'handshake',
+          colorIndex: p1ColorIndex,
+          targetScore: targetScore,
+          isHost: isOnlineHost
+        });
+
+        setTimeout(() => {
+          homeScreen.classList.add('hidden');
+          resizeArena();
+          resetMatchSession();
+          if (pingBadge) pingBadge.classList.remove('hidden');
+          startPingCycle();
+        }, 300);
+      });
+
+      conn.on('data', (data) => {
+        handlePeerMessage(data);
+      });
+
+      conn.on('close', () => {
+        if (disconnectToast) {
+          disconnectToast.classList.remove('hidden');
+          setTimeout(() => disconnectToast.classList.add('hidden'), 3500);
+        }
+      });
+
+      conn.on('error', (err) => {
+        console.warn('Peer connection error:', err);
+      });
+    }
+
+    function handlePeerMessage(data) {
+      if (!data || !data.t) return;
+
+      if (data.t === 'handshake') {
+        barP2.color = PALETTES[data.colorIndex] || PALETTES[3];
+        if (!isOnlineHost && data.targetScore) {
+          targetScore = data.targetScore;
+        }
+        updateBadgeStyles();
+      } else if (data.t === 'paddle') {
+        remoteTarget.p2X = (1 - data.x) * arenaW;
+        remoteTarget.p2Y = (1 - data.y) * arenaH;
+      } else if (data.t === 'state') {
+        remoteTarget.puckX = data.px * arenaW;
+        remoteTarget.puckY = data.py * arenaH;
+        remoteTarget.p2X = data.p1x * arenaW;
+        remoteTarget.p2Y = data.p1y * arenaH;
+        scoreP1 = data.s1;
+        scoreP2 = data.s2;
+        scoreP1El.textContent = scoreP1;
+        scoreP2El.textContent = scoreP2;
+      } else if (data.t === 'goal') {
+        const scorer = data.scorer === 'P1' ? 'P2' : 'P1';
+        AudioEngine.playGoal();
+        triggerShake(12);
+        displayGoalToast(scorer);
+        spawnSparks(arenaW / 2, arenaH / 2, '#facc15', 24);
+        verifyMatchWinner();
+      } else if (data.t === 'ping') {
+        if (peerConn && peerConn.open) {
+          peerConn.send({ t: 'pong', time: data.time });
+        }
+      } else if (data.t === 'pong') {
+        currentPing = Math.max(1, Math.round(Date.now() - data.time));
+        if (pingVal) pingVal.textContent = currentPing;
+      } else if (data.t === 'rematch') {
+        resetMatchSession();
+      }
+    }
+
+    function sendOnlinePaddlePos() {
+      if (gameMode !== 'Online' || !peerConn || !peerConn.open) return;
+      peerConn.send({
+        t: 'paddle',
+        x: barP1.x / arenaW,
+        y: barP1.y / arenaH
+      });
+    }
+
+    function sendOnlineGoalEvent(scorer) {
+      if (gameMode !== 'Online' || !peerConn || !peerConn.open) return;
+      peerConn.send({
+        t: 'goal',
+        scorer: scorer
+      });
+    }
+
+    function startPingCycle() {
+      setInterval(() => {
+        if (gameMode === 'Online' && peerConn && peerConn.open) {
+          lastPingSendTime = Date.now();
+          peerConn.send({ t: 'ping', time: lastPingSendTime });
+        }
+      }, 2000);
+    }
+
+    // ==================== UI INITIALIZATION ====================
+    function renderPaletteOptions() {
+      const p1PaletteEl = document.getElementById('p1ColorPalette');
+      const p2PaletteEl = document.getElementById('p2ColorPalette');
+      const p1Label = document.getElementById('p1ColorLabel');
+      const p2Label = document.getElementById('p2ColorLabel');
+
+      if (!p1PaletteEl || !p2PaletteEl) return;
+
+      p1PaletteEl.innerHTML = '';
+      p2PaletteEl.innerHTML = '';
+
+      PALETTES.forEach((col, idx) => {
+        const btn1 = document.createElement('button');
+        btn1.type = 'button';
+        btn1.className = `color-dot ${idx === p1ColorIndex ? 'active ring-2 ring-white' : 'opacity-70 hover:opacity-100'}`;
+        btn1.style.backgroundColor = col.hex;
+        btn1.style.color = col.glow;
+        btn1.addEventListener('click', () => {
+          p1ColorIndex = idx;
+          barP1.color = col;
+          p1Label.textContent = col.name;
+          p1Label.style.color = col.hex;
+          renderPaletteOptions();
+          updateBadgeStyles();
+        });
+        p1PaletteEl.appendChild(btn1);
+
+        const btn2 = document.createElement('button');
+        btn2.type = 'button';
+        btn2.className = `color-dot ${idx === p2ColorIndex ? 'active ring-2 ring-white' : 'opacity-70 hover:opacity-100'}`;
+        btn2.style.backgroundColor = col.hex;
+        btn2.style.color = col.glow;
+        btn2.addEventListener('click', () => {
+          p2ColorIndex = idx;
+          barP2.color = col;
+          p2Label.textContent = col.name;
+          p2Label.style.color = col.hex;
+          renderPaletteOptions();
+          updateBadgeStyles();
+        });
+        p2PaletteEl.appendChild(btn2);
+      });
+    }
+
+    function initUserInterface() {
+      canvas = document.getElementById('gameCanvas');
+      ctx = canvas.getContext('2d');
+      arenaBox = document.getElementById('arenaBox');
+
+      homeScreen = document.getElementById('homeScreen');
+      howToModal = document.getElementById('howToModal');
+      pausePopup = document.getElementById('pausePopup');
+      resultModal = document.getElementById('resultModal');
+      goalBanner = document.getElementById('goalBanner');
+      disconnectToast = document.getElementById('disconnectToast');
+
+      scoreP1El = document.getElementById('scoreP1El');
+      scoreP2El = document.getElementById('scoreP2El');
+      p1HudBadge = document.getElementById('p1HudBadge');
+      p2HudBadge = document.getElementById('p2HudBadge');
+      resultHeading = document.getElementById('resultHeading');
+      resultSub = document.getElementById('resultSub');
+      diffDesc = document.getElementById('diffDesc');
+      pingBadge = document.getElementById('pingBadge');
+      pingVal = document.getElementById('pingVal');
+
+      const btnModeCpu = document.getElementById('btnModeCpu');
+      const btnModeOnline = document.getElementById('btnModeOnline');
+      const btnModePvp = document.getElementById('btnModePvp');
+      const diffSection = document.getElementById('diffSection');
+      const ptsSection = document.getElementById('ptsSection');
+      const onlinePanel = document.getElementById('onlinePanel');
+      const p2ColorGroup = document.getElementById('p2ColorGroup');
+      const p2ColorHeading = document.getElementById('p2ColorHeading');
+
+      const btnCreateRoom = document.getElementById('btnCreateRoom');
+      const btnJoinRoom = document.getElementById('btnJoinRoom');
+      const hostInfoBox = document.getElementById('hostInfoBox');
+      const joinInfoBox = document.getElementById('joinInfoBox');
+      const myPeerIdDisplay = document.getElementById('myPeerIdDisplay');
+      const btnCopyInvite = document.getElementById('btnCopyInvite');
+      const targetPeerInput = document.getElementById('targetPeerInput');
+      const btnConnectPeer = document.getElementById('btnConnectPeer');
+
+      const btnStartGame = document.getElementById('btnStartGame');
+      const btnHowToPlay = document.getElementById('btnHowToPlay');
+      const btnCloseHowTo = document.getElementById('btnCloseHowTo');
+      const btnConfirmHowTo = document.getElementById('btnConfirmHowTo');
+      const btnSoundToggle = document.getElementById('btnSoundToggle');
+      const btnGameSoundToggle = document.getElementById('btnGameSoundToggle');
+      const btnBackToHome = document.getElementById('btnBackToHome');
+      const btnPauseMatch = document.getElementById('btnPauseMatch');
+      const btnResumeMatch = document.getElementById('btnResumeMatch');
+      const btnPauseReturnHome = document.getElementById('btnPauseReturnHome');
+      const btnRematch = document.getElementById('btnRematch');
+      const btnResultHome = document.getElementById('btnResultHome');
+
+      const bindClick = (el, handler) => {
+        if (!el) return;
+        el.addEventListener('click', handler);
+      };
+
+      bindClick(btnModeCpu, (e) => {
+        e.stopPropagation();
+        AudioEngine.init();
+        gameMode = 'PvC';
+        btnModeCpu.className = 'py-2 px-2 rounded-xl border-2 border-cyan-500 bg-cyan-500/20 text-cyan-300 font-bold text-xs flex flex-col items-center justify-center gap-1 transition shadow-lg shadow-cyan-950/50';
+        btnModeOnline.className = 'py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-slate-600';
+        btnModePvp.className = 'py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-slate-600';
+        diffSection.style.display = 'block';
+        ptsSection.style.display = 'block';
+        onlinePanel.classList.add('hidden');
+        btnStartGame.style.display = 'flex';
+        p2ColorGroup.style.display = 'block';
+        p2ColorHeading.textContent = '相手のマレット色 (CPU)';
+      });
+
+      bindClick(btnModeOnline, (e) => {
+        e.stopPropagation();
+        AudioEngine.init();
+        gameMode = 'Online';
+        btnModeOnline.className = 'py-2 px-2 rounded-xl border-2 border-sky-400 bg-sky-500/20 text-sky-200 font-bold text-xs flex flex-col items-center justify-center gap-1 transition shadow-lg shadow-sky-950/50';
+        btnModeCpu.className = 'py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-slate-600';
+        btnModePvp.className = 'py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-slate-600';
+        diffSection.style.display = 'none';
+        ptsSection.style.display = 'block';
+        onlinePanel.classList.remove('hidden');
+        btnStartGame.style.display = 'none';
+        p2ColorGroup.style.display = 'none';
+        initPeerInstance();
+      });
+
+      bindClick(btnModePvp, (e) => {
+        e.stopPropagation();
+        AudioEngine.init();
+        gameMode = 'PvP';
+        btnModePvp.className = 'py-2 px-2 rounded-xl border-2 border-rose-500 bg-rose-500/20 text-rose-300 font-bold text-xs flex flex-col items-center justify-center gap-1 transition shadow-lg shadow-rose-950/50';
+        btnModeCpu.className = 'py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-slate-600';
+        btnModeOnline.className = 'py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-slate-600';
+        diffSection.style.display = 'none';
+        ptsSection.style.display = 'block';
+        onlinePanel.classList.add('hidden');
+        btnStartGame.style.display = 'flex';
+        p2ColorGroup.style.display = 'block';
+        p2ColorHeading.textContent = '2Pのマレット色';
+      });
+
+      bindClick(btnCreateRoom, () => {
+        hostInfoBox.classList.remove('hidden');
+        joinInfoBox.classList.add('hidden');
+        isOnlineHost = true;
+        initPeerInstance(null, (id) => {
+          myPeerIdDisplay.textContent = id;
+        });
+      });
+
+      bindClick(btnJoinRoom, () => {
+        joinInfoBox.classList.remove('hidden');
+        hostInfoBox.classList.add('hidden');
+        isOnlineHost = false;
+      });
+
+      bindClick(btnCopyInvite, () => {
+        const url = `${window.location.origin}${window.location.pathname}?room=${myPeerIdDisplay.textContent.trim()}`;
+        navigator.clipboard.writeText(url).then(() => {
+          btnCopyInvite.textContent = '✅ URLをコピーしました！';
+          setTimeout(() => btnCopyInvite.textContent = '📋 招待リンクをコピー', 2000);
+        });
+      });
+
+      bindClick(btnConnectPeer, () => {
+        const targetId = targetPeerInput.value.trim().toUpperCase();
+        if (!targetId) return;
+        AudioEngine.init();
+        if (!peer || peer.destroyed) {
+          initPeerInstance(null, () => {
+            const conn = peer.connect(targetId, { reliable: true });
+            setupPeerConnection(conn);
+          });
+        } else {
+          const conn = peer.connect(targetId, { reliable: true });
+          setupPeerConnection(conn);
+        }
+      });
+
+      const diffStyles = {
+        easy: {
+          inactive: 'btn-diff py-2 rounded-xl bg-slate-800/90 text-emerald-400 text-xs font-bold border border-slate-700 hover:border-slate-600',
+          active: 'btn-diff py-2 rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-bold border-2 border-emerald-500 shadow shadow-emerald-950/50',
+          descText: 'かんたん (初心者向け)',
+          descClass: 'text-[11px] text-emerald-400 font-bold'
+        },
+        normal: {
+          inactive: 'btn-diff py-2 rounded-xl bg-slate-800/90 text-white text-xs font-bold border border-slate-700 hover:border-slate-600',
+          active: 'btn-diff py-2 rounded-xl bg-white/20 text-white text-xs font-bold border-2 border-white shadow shadow-slate-900',
+          descText: 'ふつう (バランス型)',
+          descClass: 'text-[11px] text-white font-bold'
+        },
+        hard: {
+          inactive: 'btn-diff py-2 rounded-xl bg-slate-800/90 text-amber-400 text-xs font-bold border border-slate-700 hover:border-slate-600',
+          active: 'btn-diff py-2 rounded-xl bg-amber-500/20 text-amber-300 text-xs font-bold border-2 border-amber-500 shadow shadow-amber-950/50',
+          descText: '強い (予測＆カウンター)',
+          descClass: 'text-[11px] text-amber-400 font-bold'
+        },
+        expert: {
+          inactive: 'btn-diff py-2 rounded-xl bg-slate-800/90 text-rose-500 text-xs font-bold border border-slate-700 hover:border-slate-600',
+          active: 'btn-diff py-2 rounded-xl bg-rose-500/20 text-rose-400 text-xs font-bold border-2 border-rose-500 shadow shadow-rose-950/50',
+          descText: '激ムズ (神速反応)',
+          descClass: 'text-[11px] text-rose-400 font-bold'
+        }
+      };
+
+      const diffButtons = document.querySelectorAll('.btn-diff');
+      diffButtons.forEach(btn => {
+        bindClick(btn, (e) => {
+          e.stopPropagation();
+          AudioEngine.init();
+          cpuDifficulty = btn.getAttribute('data-diff');
+          
+          diffButtons.forEach(b => {
+            const d = b.getAttribute('data-diff');
+            if (d === cpuDifficulty) {
+              b.className = diffStyles[d].active;
+            } else {
+              b.className = diffStyles[d].inactive;
+            }
+          });
+
+          if (diffDesc && diffStyles[cpuDifficulty]) {
+            diffDesc.textContent = diffStyles[cpuDifficulty].descText;
+            diffDesc.className = diffStyles[cpuDifficulty].descClass;
+          }
+        });
+      });
+
+      const ptsButtons = document.querySelectorAll('.btn-pts');
+      ptsButtons.forEach(btn => {
+        bindClick(btn, (e) => {
+          e.stopPropagation();
+          AudioEngine.init();
+          targetScore = parseInt(btn.getAttribute('data-pts'), 10);
+          ptsButtons.forEach(b => {
+            b.className = 'btn-pts py-2 rounded-xl bg-slate-800/90 text-slate-400 text-xs font-bold border border-slate-700';
+          });
+          btn.className = 'btn-pts py-2 rounded-xl bg-cyan-500/20 text-cyan-300 text-xs font-bold border-2 border-cyan-500 shadow';
+        });
+      });
+
+      bindClick(btnStartGame, (e) => {
+        e.stopPropagation();
+        AudioEngine.init();
+        homeScreen.classList.add('hidden');
+        resizeArena();
+        resetMatchSession();
+      });
+
+      const openHowTo = (e) => {
+        e.stopPropagation();
+        howToModal.classList.remove('hidden');
+      };
+      bindClick(btnHowToPlay, openHowTo);
+
+      const closeHowTo = (e) => {
+        e.stopPropagation();
+        howToModal.classList.add('hidden');
+      };
+      bindClick(btnCloseHowTo, closeHowTo);
+      bindClick(btnConfirmHowTo, closeHowTo);
+
+      const refreshSoundIcons = () => {
+        const icon = AudioEngine.enabled ? '🔊' : '🔇';
+        if (btnSoundToggle) btnSoundToggle.textContent = icon;
+        if (btnGameSoundToggle) btnGameSoundToggle.textContent = icon;
+      };
+
+      bindClick(btnSoundToggle, (e) => {
+        e.stopPropagation();
+        AudioEngine.init();
+        AudioEngine.toggle();
+        refreshSoundIcons();
+      });
+
+      bindClick(btnGameSoundToggle, (e) => {
+        e.stopPropagation();
+        AudioEngine.init();
+        AudioEngine.toggle();
+        refreshSoundIcons();
+      });
+
+      bindClick(btnBackToHome, (e) => {
+        e.stopPropagation();
+        isPaused = true;
+        homeScreen.classList.remove('hidden');
+        Records.refreshUI();
+      });
+
+      bindClick(btnPauseMatch, (e) => {
+        e.stopPropagation();
+        if (gameMode === 'Online') return;
+        isPaused = !isPaused;
+        if (isPaused) pausePopup.classList.remove('hidden');
+        else pausePopup.classList.add('hidden');
+      });
+
+      bindClick(btnResumeMatch, (e) => {
+        e.stopPropagation();
+        isPaused = false;
+        pausePopup.classList.add('hidden');
+      });
+
+      bindClick(btnPauseReturnHome, (e) => {
+        e.stopPropagation();
+        pausePopup.classList.add('hidden');
+        homeScreen.classList.remove('hidden');
+        Records.refreshUI();
+      });
+
+      bindClick(btnRematch, (e) => {
+        e.stopPropagation();
+        if (gameMode === 'Online' && peerConn && peerConn.open) {
+          peerConn.send({ t: 'rematch' });
+        }
+        resetMatchSession();
+      });
+
+      bindClick(btnResultHome, (e) => {
+        e.stopPropagation();
+        resultModal.classList.add('hidden');
+        homeScreen.classList.remove('hidden');
+        Records.refreshUI();
+      });
+
+      renderPaletteOptions();
+      setupCanvasInputs();
+      window.addEventListener('resize', resizeArena);
+      resizeArena();
+      Records.refreshUI();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const roomParam = urlParams.get('room');
+      if (roomParam) {
+        btnModeOnline.click();
+        btnJoinRoom.click();
+        targetPeerInput.value = roomParam.toUpperCase();
+        setTimeout(() => {
+          btnConnectPeer.click();
+        }, 500);
+      }
+
+      requestAnimationFrame(render);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initUserInterface);
+    } else {
+      initUserInterface();
+    }
+  </script>
+</body>
+</html>
