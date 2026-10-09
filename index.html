@@ -156,15 +156,30 @@
               <button type="button" id="btnCopyInvite" class="w-full py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 font-bold text-xs border border-sky-500/40 transition flex items-center justify-center gap-1">
                 <span>📋 招待リンクをコピー</span>
               </button>
-              <p class="text-[10px] text-slate-500 animate-pulse">対戦相手の入室を待機しています...</p>
+              <p id="hostWaitingText" class="text-[10px] text-slate-400 animate-pulse">対戦相手の入室を待機しています...</p>
+              
+              <!-- 入室後のホスト用対戦開始ボタンエリア -->
+              <div id="hostLobbyReadyBox" class="hidden pt-1 space-y-2 border-t border-slate-800">
+                <div class="text-xs font-bold text-emerald-400 flex items-center justify-center gap-1">
+                  <span>✨ 相手プレイヤーが入室しました！</span>
+                </div>
+                <button type="button" id="btnHostStartMatch" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 hover:brightness-110 text-slate-950 font-black font-neon text-xs tracking-wider shadow-lg shadow-emerald-950/50 transition">
+                  🚀 対戦を開始する
+                </button>
+              </div>
             </div>
 
             <!-- Join Room Input -->
             <div id="joinInfoBox" class="hidden p-2.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
               <input type="text" id="targetPeerInput" placeholder="ルームIDを入力 (例: ND-XXXXX)" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-cyan-300 font-mono text-xs focus:outline-none focus:border-cyan-500 text-center uppercase">
               <button type="button" id="btnConnectPeer" class="w-full py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition">
-                接続して対戦開始
+                部屋へ入室する
               </button>
+              <!-- ゲスト入室後の待機/対戦開始待ちエリア -->
+              <div id="guestLobbyReadyBox" class="hidden pt-2 border-t border-slate-800 text-center space-y-1.5">
+                <div class="text-xs font-bold text-emerald-400">✨ 部屋への入室が完了しました！</div>
+                <p id="guestWaitingText" class="text-[11px] text-amber-300 animate-pulse font-bold">ホストが対戦を開始するのを待っています...</p>
+              </div>
             </div>
           </div>
         </div>
@@ -255,11 +270,11 @@
         </div>
 
         <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-          <div class="font-bold text-sky-400">🌐 オンライン対戦のやり方</div>
+          <div class="font-bold text-sky-400">🌐 オンライン対戦の流れ</div>
           <div class="text-xs text-slate-300 space-y-1">
-            <p>1. 「部屋を作成する」を押して発行されたルームID（または招待リンク）を対戦相手に伝えます。</p>
-            <p>2. 相手は「参加する」を選んでIDを入力するか、共有リンクをブラウザで開くだけで即座に対戦が始まります。</p>
-            <p>※STUN/TURNリレーサーバーに対応しており、厳しいWi-Fiネットワーク環境下でも通信を確立できます。</p>
+            <p>1. ホストが「部屋を作成する」を押して発行されたルームID（または招待リンク）を対戦相手に伝えます。</p>
+            <p>2. ゲストが「参加する」からIDを入力またはリンク経由で入室すると、ホスト側に通知され「対戦を開始する」ボタンが出現します。</p>
+            <p>3. ホストが対戦開始ボタンを押すと、両者の画面で同期して試合がスタートします。</p>
           </div>
         </div>
 
@@ -522,6 +537,7 @@
     let peerConn = null;
     let lastPingSendTime = 0;
     let currentPing = 0;
+    let isPeerConnected = false;
 
     let cpuDifficulty = 'normal';
     let targetScore = 5;
@@ -1239,7 +1255,7 @@
       resetPuck(Math.random() > 0.5 ? 1 : 2);
     }
 
-    // ==================== ONLINE PEERJS NETWORKING ====================
+    // ==================== ONLINE PEERJS NETWORKING & LOBBY ====================
     function generateRoomCode() {
       const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
       let code = '';
@@ -1267,16 +1283,6 @@
             },
             {
               urls: 'turn:openrelay.metered.ca:443',
-              username: 'openrelayproject',
-              credential: 'openrelayproject'
-            },
-            {
-              urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-              username: 'openrelayproject',
-              credential: 'openrelayproject'
-            },
-            {
-              urls: 'turns:openrelay.metered.ca:443',
               username: 'openrelayproject',
               credential: 'openrelayproject'
             }
@@ -1316,12 +1322,14 @@
       peerConn = conn;
 
       conn.on('open', () => {
+        isPeerConnected = true;
         const netStatusBadge = document.getElementById('netStatusBadge');
         if (netStatusBadge) {
-          netStatusBadge.textContent = '対戦接続中！';
-          netStatusBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono animate-pulse';
+          netStatusBadge.textContent = '接続確立！';
+          netStatusBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono';
         }
 
+        // 初期ハンドシェイク送信
         conn.send({
           t: 'handshake',
           colorIndex: p1ColorIndex,
@@ -1329,13 +1337,16 @@
           isHost: isOnlineHost
         });
 
-        setTimeout(() => {
-          homeScreen.classList.add('hidden');
-          resizeArena();
-          resetMatchSession();
-          if (pingBadge) pingBadge.classList.remove('hidden');
-          startPingCycle();
-        }, 300);
+        // UI切り替え：ホスト側とゲスト側でロビー画面内のボタン状態を更新
+        if (isOnlineHost) {
+          const hostWaitingText = document.getElementById('hostWaitingText');
+          const hostLobbyReadyBox = document.getElementById('hostLobbyReadyBox');
+          if (hostWaitingText) hostWaitingText.classList.add('hidden');
+          if (hostLobbyReadyBox) hostLobbyReadyBox.classList.remove('hidden');
+        } else {
+          const guestLobbyReadyBox = document.getElementById('guestLobbyReadyBox');
+          if (guestLobbyReadyBox) guestLobbyReadyBox.classList.remove('hidden');
+        }
       });
 
       conn.on('data', (data) => {
@@ -1343,6 +1354,7 @@
       });
 
       conn.on('close', () => {
+        isPeerConnected = false;
         if (disconnectToast) {
           disconnectToast.classList.remove('hidden');
           setTimeout(() => disconnectToast.classList.add('hidden'), 3500);
@@ -1354,6 +1366,14 @@
       });
     }
 
+    function launchOnlineMatch() {
+      if (homeScreen) homeScreen.classList.add('hidden');
+      resizeArena();
+      resetMatchSession();
+      if (pingBadge) pingBadge.classList.remove('hidden');
+      startPingCycle();
+    }
+
     function handlePeerMessage(data) {
       if (!data || !data.t) return;
 
@@ -1363,6 +1383,11 @@
           targetScore = data.targetScore;
         }
         updateBadgeStyles();
+      } else if (data.t === 'start_match') {
+        // ホストから対戦開始シグナルを受信したゲストが試合画面へ突入
+        if (!isOnlineHost) {
+          launchOnlineMatch();
+        }
       } else if (data.t === 'paddle') {
         remoteTarget.p2X = (1 - data.x) * arenaW;
         remoteTarget.p2Y = (1 - data.y) * arenaH;
@@ -1504,6 +1529,7 @@
       const btnCopyInvite = document.getElementById('btnCopyInvite');
       const targetPeerInput = document.getElementById('targetPeerInput');
       const btnConnectPeer = document.getElementById('btnConnectPeer');
+      const btnHostStartMatch = document.getElementById('btnHostStartMatch');
 
       const btnStartGame = document.getElementById('btnStartGame');
       const btnHowToPlay = document.getElementById('btnHowToPlay');
@@ -1591,7 +1617,17 @@
         });
       });
 
-      // 10秒タイムアウト機能付きの接続処理
+      // ホストが対戦開始ボタンを押した時の処理
+      bindClick(btnHostStartMatch, () => {
+        if (!peerConn || !peerConn.open) {
+          alert('対戦相手が接続されていません。');
+          return;
+        }
+        // ゲストへ対戦開始合図を送信
+        peerConn.send({ t: 'start_match' });
+        launchOnlineMatch();
+      });
+
       bindClick(btnConnectPeer, () => {
         const targetId = targetPeerInput.value.trim().toUpperCase();
         if (!targetId) {
@@ -1614,10 +1650,9 @@
               return;
             }
 
-            // 10秒間のタイムアウト設定
             const timeoutTimer = setTimeout(() => {
               if (!conn.open) {
-                alert('接続がタイムアウトしました。ルームIDが正しいか、ホスト側が部屋の待機画面を開いているかご確認ください。');
+                alert('接続がタイムアウトしました。ルームIDやホストの状態をご確認ください。');
                 if (netStatusBadge) {
                   netStatusBadge.textContent = '接続失敗 (タイムアウト)';
                   netStatusBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 font-mono';
