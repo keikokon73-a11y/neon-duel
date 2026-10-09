@@ -132,7 +132,7 @@
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-sky-400 flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span>
-              リアルタイムP2P通信 (STUN接続)
+              リアルタイムP2P通信 (STUN/TURN対応)
             </span>
             <span id="netStatusBadge" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">未接続</span>
           </div>
@@ -259,7 +259,7 @@
           <div class="text-xs text-slate-300 space-y-1">
             <p>1. 「部屋を作成する」を押して発行されたルームID（または招待リンク）を対戦相手に伝えます。</p>
             <p>2. 相手は「参加する」を選んでIDを入力するか、共有リンクをブラウザで開くだけで即座に対戦が始まります。</p>
-            <p>※安定したSTUN構成で高速・低遅延のP2Pマッチングを行います。</p>
+            <p>※STUN/TURNリレーサーバーに対応しており、厳しいWi-Fiネットワーク環境下でも通信を確立できます。</p>
           </div>
         </div>
 
@@ -1254,57 +1254,63 @@
         try { peer.destroy(); } catch (e) {}
       }
 
-      // 安定性の高いSTUNサーバー設定
+      // STUN & TURN中継サーバー設定（NAT/ファイアウォール貫通対策）
       const peerConfig = {
-        debug: 1,
         config: {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:stun3.l.google.com:19302' },
-            { urls: 'stun:stun4.l.google.com:19302' },
-            { urls: 'stun:global.stun.twilio.com:3478' }
-          ]
+            { urls: 'stun:openrelay.metered.ca:80' },
+            {
+              urls: 'turn:openrelay.metered.ca:80',
+              username: 'openrelayproject',
+              credential: 'openrelayproject'
+            },
+            {
+              urls: 'turn:openrelay.metered.ca:443',
+              username: 'openrelayproject',
+              credential: 'openrelayproject'
+            },
+            {
+              urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+              username: 'openrelayproject',
+              credential: 'openrelayproject'
+            },
+            {
+              urls: 'turns:openrelay.metered.ca:443',
+              username: 'openrelayproject',
+              credential: 'openrelayproject'
+            }
+          ],
+          iceCandidatePoolSize: 10
         }
       };
 
       const finalId = desiredId || generateRoomCode();
+      peer = new Peer(finalId, peerConfig);
 
-      try {
-        peer = new Peer(finalId, peerConfig);
+      peer.on('open', (id) => {
+        const netStatusBadge = document.getElementById('netStatusBadge');
+        if (netStatusBadge) {
+          netStatusBadge.textContent = 'オンライン準備OK';
+          netStatusBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono';
+        }
+        if (onReady) onReady(id);
+      });
 
-        peer.on('open', (id) => {
-          const netStatusBadge = document.getElementById('netStatusBadge');
-          if (netStatusBadge) {
-            netStatusBadge.textContent = 'オンライン準備OK';
-            netStatusBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono';
-          }
-          if (onReady) onReady(id);
-        });
+      peer.on('connection', (conn) => {
+        isOnlineHost = true;
+        setupPeerConnection(conn);
+      });
 
-        peer.on('connection', (conn) => {
-          isOnlineHost = true;
-          setupPeerConnection(conn);
-        });
-
-        peer.on('error', (err) => {
-          console.error('PeerJS エラー詳細:', err);
-          const netStatusBadge = document.getElementById('netStatusBadge');
-          if (netStatusBadge) {
-            let reason = err.type || '接続失敗';
-            if (err.type === 'peer-unavailable') reason = '部屋IDが見つかりません';
-            else if (err.type === 'network') reason = 'ネットワーク未接続';
-            else if (err.type === 'server-error') reason = 'サーバー接続障害';
-            else if (err.type === 'browser-incompatible') reason = '非対応ブラウザ';
-
-            netStatusBadge.textContent = `通信エラー (${reason})`;
-            netStatusBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 font-mono';
-          }
-        });
-      } catch (e) {
-        console.error('Peer初期化失敗:', e);
-      }
+      peer.on('error', (err) => {
+        console.warn('Peer error:', err);
+        const netStatusBadge = document.getElementById('netStatusBadge');
+        if (netStatusBadge) {
+          netStatusBadge.textContent = '通信エラー: ' + (err.type || '未接続');
+          netStatusBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 font-mono';
+        }
+      });
     }
 
     function setupPeerConnection(conn) {
