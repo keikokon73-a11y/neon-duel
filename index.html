@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>NEON DUEL HOCKEY - ONLINE P2P</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 安定したPeerJS最新版の読み込み -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=M+PLUS+1p:wght@400;600;800;900&display=swap" rel="stylesheet">
   <style>
@@ -22,12 +23,6 @@
     }
     .font-neon {
       font-family: 'Orbitron', monospace;
-    }
-    .neon-text-cyan {
-      text-shadow: 0 0 10px rgba(6, 182, 212, 0.8), 0 0 25px rgba(6, 182, 212, 0.4);
-    }
-    .neon-text-rose {
-      text-shadow: 0 0 10px rgba(244, 63, 94, 0.8), 0 0 25px rgba(244, 63, 94, 0.4);
     }
     .custom-scrollbar::-webkit-scrollbar {
       width: 6px;
@@ -66,26 +61,26 @@
 </head>
 <body class="relative w-screen h-screen flex flex-col items-center justify-center p-1 sm:p-3 overflow-hidden">
 
-  <!-- ==================== HOME SCREEN OVERLAY ==================== -->
+  <!-- ==================== ホーム画面オーバーレイ ==================== -->
   <div id="homeScreen" class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
     <div class="relative w-full max-w-md bg-slate-900/95 border border-slate-700/80 rounded-3xl shadow-2xl p-6 overflow-hidden flex flex-col justify-between my-auto z-10 max-h-[95vh] overflow-y-auto custom-scrollbar">
       
-      <!-- Top Glowing Orbs -->
+      <!-- 背景グロー装飾 -->
       <div class="absolute -top-12 -left-12 w-44 h-44 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none -z-10"></div>
       <div class="absolute -bottom-12 -right-12 w-44 h-44 bg-rose-500/20 rounded-full blur-3xl pointer-events-none -z-10"></div>
 
-      <!-- Header & Record Counter -->
+      <!-- タイトル & 戦績 -->
       <div class="text-center relative z-20">
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/90 border border-slate-700 text-cyan-400 text-xs mb-2 font-bold tracking-wider">
           <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-          ONLINE P2P MULTIPLAYER EDITION
+          ONLINE P2P STABLE EDITION
         </div>
         <h1 class="font-neon text-3xl sm:text-4xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-rose-400 drop-shadow">
           NEON DUEL
         </h1>
         <p class="font-neon text-[11px] tracking-widest text-slate-400 font-semibold mt-0.5">TACTICAL CYBER AIR HOCKEY</p>
 
-        <!-- Stats -->
+        <!-- 戦績表示 -->
         <div class="mt-3 flex items-center justify-center gap-3 text-xs">
           <div class="bg-slate-950/80 border border-slate-800 px-4 py-1.5 rounded-xl shadow-inner">
             <span class="text-slate-400 text-[10px] block">通算勝利</span>
@@ -98,9 +93,9 @@
         </div>
       </div>
 
-      <!-- Match Settings -->
+      <!-- 設定エリア -->
       <div class="my-4 space-y-3.5 relative z-20">
-        <!-- Game Mode Selection -->
+        <!-- モード選択 -->
         <div>
           <label class="block text-xs font-bold text-slate-400 mb-1.5">対戦モード</label>
           <div class="grid grid-cols-3 gap-2">
@@ -119,64 +114,72 @@
           </div>
         </div>
 
-        <!-- Online Lobby Panel (Shown only in Online Mode) -->
+        <!-- オンラインロビーパネル -->
         <div id="onlinePanel" class="hidden p-3.5 rounded-2xl bg-slate-950/90 border border-sky-500/40 space-y-3">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-sky-400 flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span>
-              P2Pコネクションサーバー
+              クラウドP2Pロビー
             </span>
             <span id="netStatusBadge" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">未接続</span>
           </div>
 
           <div class="space-y-2">
+            <!-- 作成・参加切替ボタン -->
             <div class="flex gap-2">
               <button type="button" id="btnCreateRoom" class="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:brightness-110 text-white font-bold text-xs shadow transition">
-                部屋を作成する
+                部屋を作成する (ホスト)
               </button>
               <button type="button" id="btnJoinRoom" class="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs transition">
-                参加する
+                参加する (ゲスト)
               </button>
             </div>
 
-            <!-- Host Room Info -->
-            <div id="hostInfoBox" class="hidden p-2.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2 text-center">
-              <div class="text-[11px] text-slate-400">あなたのルームID (自動生成):</div>
-              <div id="myPeerIdDisplay" class="font-mono text-xs sm:text-sm font-black text-cyan-400 tracking-wider select-all py-1.5 bg-slate-950 rounded-lg border border-slate-800 px-1 truncate">
-                接続サーバーへ登録中...
+            <!-- ホスト用インフォメーション -->
+            <div id="hostInfoBox" class="hidden p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2 text-center">
+              <div class="text-[11px] text-slate-400">あなたのルームID (自動発行):</div>
+              <div id="myPeerIdDisplay" class="font-mono text-xs sm:text-sm font-black text-cyan-400 tracking-wider select-all py-2 bg-slate-950 rounded-lg border border-slate-800 px-2 break-all">
+                サーバー接続中...
               </div>
-              <button type="button" id="btnCopyInvite" class="w-full py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 font-bold text-xs border border-sky-500/40 transition flex items-center justify-center gap-1">
+              <button type="button" id="btnCopyInvite" class="w-full py-2 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 font-bold text-xs border border-sky-500/40 transition flex items-center justify-center gap-1">
                 <span>📋 招待リンクをコピー</span>
               </button>
-              <p id="hostWaitingText" class="text-[10px] text-slate-400 animate-pulse">対戦相手の入室を待機しています...</p>
+              <p id="hostWaitingText" class="text-[10px] text-slate-400 animate-pulse">対戦相手の入室を待っています...</p>
               
-              <!-- 入室後のホスト用対戦開始ボタンエリア -->
-              <div id="hostLobbyReadyBox" class="hidden pt-1 space-y-2 border-t border-slate-800">
-                <div class="text-xs font-bold text-emerald-400 flex items-center justify-center gap-1">
-                  <span>✨ 相手プレイヤーが入室しました！</span>
-                </div>
+              <!-- ホスト用対戦開始ボタン -->
+              <div id="hostLobbyReadyBox" class="hidden pt-2 space-y-2 border-t border-slate-800">
+                <div class="text-xs font-bold text-emerald-400">✨ プレイヤーが正常に入室しました！</div>
                 <button type="button" id="btnHostStartMatch" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 hover:brightness-110 text-slate-950 font-black font-neon text-xs tracking-wider shadow-lg shadow-emerald-950/50 transition">
                   🚀 対戦を開始する
                 </button>
               </div>
             </div>
 
-            <!-- Join Room Input -->
-            <div id="joinInfoBox" class="hidden p-2.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-              <input type="text" id="targetPeerInput" placeholder="ホストのルームIDを貼り付け" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-cyan-300 font-mono text-xs focus:outline-none focus:border-cyan-500 text-center">
-              <button type="button" id="btnConnectPeer" class="w-full py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition shadow">
-                部屋へ入室する
-              </button>
-              <!-- ゲスト入室後の待機エリア -->
-              <div id="guestLobbyReadyBox" class="hidden pt-2 border-t border-slate-800 text-center space-y-1.5">
-                <div class="text-xs font-bold text-emerald-400">✨ 部屋への入室が完了しました！</div>
-                <p id="guestWaitingText" class="text-[11px] text-amber-300 animate-pulse font-bold">ホストが対戦を開始するのを待っています...</p>
+            <!-- ゲスト用参加インフォメーション -->
+            <div id="joinInfoBox" class="hidden p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2.5">
+              <div class="text-[11px] text-slate-400">ホストから教わったルームIDを入力:</div>
+              <div class="flex gap-1.5">
+                <input type="text" id="targetPeerInput" placeholder="例: 8f9b3c2a..." class="flex-1 px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-cyan-300 font-mono text-xs focus:outline-none focus:border-cyan-500">
+                <button type="button" id="btnConnectPeer" class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition shadow">
+                  接続
+                </button>
               </div>
+              <div id="guestLobbyReadyBox" class="hidden pt-1 text-center space-y-1">
+                <div class="text-xs font-bold text-emerald-400">✨ ルーム接続成功！</div>
+                <p class="text-[11px] text-amber-300 animate-pulse font-bold">ホストが対戦を開始するのを待っています...</p>
+              </div>
+            </div>
+
+            <!-- もしオンラインがつながらない場合のローカルフォールバック案内 -->
+            <div class="pt-2 border-t border-slate-800 text-center">
+              <button type="button" id="btnFallbackLocal" class="text-[11px] text-slate-400 hover:text-cyan-300 underline transition">
+                🔄 オンラインがつながらない場合は「2Pローカル対戦」で遊ぶ
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- Mallet Color Customizer -->
+        <!-- マレット色カスタム -->
         <div class="p-3 rounded-2xl bg-slate-950/70 border border-slate-800/90 space-y-2.5">
           <div>
             <div class="flex items-center justify-between text-xs mb-1.5 font-bold">
@@ -195,21 +198,21 @@
           </div>
         </div>
 
-        <!-- CPU Difficulty Levels -->
+        <!-- CPU難易度 -->
         <div id="diffSection">
           <div class="flex items-center justify-between mb-1.5">
             <label class="text-xs font-bold text-slate-400">CPU難易度</label>
             <span id="diffDesc" class="text-[11px] text-white font-bold">ふつう (バランス型)</span>
           </div>
           <div class="grid grid-cols-4 gap-1.5">
-            <button type="button" data-diff="easy" class="btn-diff py-2 rounded-xl bg-slate-800/90 text-emerald-400 text-xs font-bold border border-slate-700 hover:border-slate-600">かんたん</button>
-            <button type="button" data-diff="normal" class="btn-diff py-2 rounded-xl bg-white/20 text-white text-xs font-bold border-2 border-white shadow shadow-slate-900">ふつう</button>
-            <button type="button" data-diff="hard" class="btn-diff py-2 rounded-xl bg-slate-800/90 text-amber-400 text-xs font-bold border border-slate-700 hover:border-slate-600">強い</button>
-            <button type="button" data-diff="expert" class="btn-diff py-2 rounded-xl bg-slate-800/90 text-rose-500 text-xs font-bold border border-slate-700 hover:border-slate-600">激ムズ</button>
+            <button type="button" data-diff="easy" class="btn-diff py-2 rounded-xl bg-slate-800/90 text-emerald-400 text-xs font-bold border border-slate-700">かんたん</button>
+            <button type="button" data-diff="normal" class="btn-diff py-2 rounded-xl bg-white/20 text-white text-xs font-bold border-2 border-white shadow">ふつう</button>
+            <button type="button" data-diff="hard" class="btn-diff py-2 rounded-xl bg-slate-800/90 text-amber-400 text-xs font-bold border border-slate-700">強い</button>
+            <button type="button" data-diff="expert" class="btn-diff py-2 rounded-xl bg-slate-800/90 text-rose-500 text-xs font-bold border border-slate-700">激ムズ</button>
           </div>
         </div>
 
-        <!-- Match Point Target -->
+        <!-- 勝利ポイント -->
         <div id="ptsSection">
           <label class="block text-xs font-bold text-slate-400 mb-1.5">勝利ポイント</label>
           <div class="grid grid-cols-3 gap-2">
@@ -220,7 +223,7 @@
         </div>
       </div>
 
-      <!-- Action Buttons -->
+      <!-- スタートボタン -->
       <div class="space-y-2.5 relative z-20 pt-1">
         <button type="button" id="btnStartGame" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 via-sky-400 to-blue-600 active:brightness-95 hover:brightness-110 text-slate-950 font-black font-neon rounded-2xl shadow-xl shadow-cyan-900/40 transition-transform active:scale-95 text-base tracking-wider flex items-center justify-center gap-2">
           <span>START MATCH</span>
@@ -240,7 +243,7 @@
     </div>
   </div>
 
-  <!-- ==================== HOW TO PLAY MODAL ==================== -->
+  <!-- ==================== 遊び方モーダル ==================== -->
   <div id="howToModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 hidden">
     <div class="relative w-full max-w-xl bg-slate-900 border border-slate-700 rounded-3xl p-5 sm:p-7 shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
@@ -253,43 +256,36 @@
 
       <div class="space-y-3.5 text-xs sm:text-sm text-slate-300 leading-relaxed overflow-y-auto pr-1 custom-scrollbar">
         <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-          <div class="font-bold text-cyan-400">🎮 1P / オンラインプレイヤーの操作</div>
+          <div class="font-bold text-cyan-400">🎮 操作方法</div>
           <div class="text-xs text-slate-300 space-y-1">
-            <p>・<strong>マウス/タッチパッド:</strong> カーソル位置へマレットがスムーズに追従します。</p>
+            <p>・<strong>マウス/タッチパッド:</strong> カーソル位置へマレットが追従します。</p>
             <p>・<strong>キーボード:</strong> 矢印キー [←][→][↑][↓] または [W][A][S][D]</p>
-            <p>・<strong>スマホ・タブレット:</strong> 画面の下半分を指でスワイプして操作。</p>
+            <p>・<strong>スマホ・タブレット:</strong> 画面下半分をスワイプして操作。</p>
           </div>
         </div>
 
         <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-          <div class="font-bold text-sky-400">🌐 オンライン対戦の流れ</div>
+          <div class="font-bold text-sky-400">🌐 オンライン対戦の手順</div>
           <div class="text-xs text-slate-300 space-y-1">
-            <p>1. ホストが「部屋を作成する」を押して生成されたルームID（または招待リンク）を対戦相手に伝えます。</p>
-            <p>2. ゲストが「参加する」からIDを入力して入室すると、ホスト側に通知され「対戦を開始する」ボタンが出現します。</p>
-            <p>3. ホストが対戦開始ボタンを押すと、両者の画面で同期して試合がスタートします。</p>
+            <p>1. どちらか一方が「部屋を作成する」を押してルームIDをコピーし、対戦相手にLINEやDiscord等で伝えます。</p>
+            <p>2. もう一方が「参加する」を選んでIDを貼り付け「接続」を押します。</p>
+            <p>3. 接続成功後、ホスト側に表示される「対戦を開始する」ボタンを押すと試合がスタートします。</p>
           </div>
-        </div>
-
-        <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-          <div class="font-bold text-amber-400">⚡ 高速スマッシュ & コーナーショット</div>
-          <p class="text-xs text-slate-300">
-            パックが当たる瞬間にパドルを前へ押し出すように振ると、猛烈なスマッシュショットが炸裂！パドルの端で捉えると鋭い角度のバンクショットが狙えます。
-          </p>
         </div>
       </div>
 
       <div class="pt-3 border-t border-slate-800 mt-2">
         <button type="button" id="btnConfirmHowTo" class="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-slate-950 font-black font-neon rounded-xl transition text-xs sm:text-sm tracking-wider">
-          GOT IT / 理解した
+          理解した
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ==================== GAME MATCH VIEW ==================== -->
+  <!-- ==================== ゲーム画面 ==================== -->
   <div id="gameView" class="relative w-full h-full max-w-5xl flex flex-col items-center justify-between p-1 sm:p-2.5 z-10">
     
-    <!-- Top HUD Header -->
+    <!-- ヘッダーHUD -->
     <header class="w-full flex items-center justify-between px-3 sm:px-5 py-2 bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-800 shadow-xl z-20 shrink-0">
       <div class="flex items-center gap-2">
         <button type="button" id="btnBackToHome" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition border border-slate-700/60">
@@ -301,7 +297,7 @@
         </span>
       </div>
 
-      <!-- Score Board -->
+      <!-- スコアボード -->
       <div class="flex items-center space-x-4 font-neon">
         <div class="flex items-center space-x-2">
           <span id="p2HudBadge" class="text-[10px] sm:text-xs px-2 py-0.5 rounded font-bold border">CPU</span>
@@ -314,7 +310,7 @@
         </div>
       </div>
 
-      <!-- Quick Action Controls -->
+      <!-- コントロール -->
       <div class="flex items-center space-x-1.5 sm:space-x-2">
         <button type="button" id="btnGameSoundToggle" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700/60">
           🔊
@@ -325,27 +321,26 @@
       </div>
     </header>
 
-    <!-- Main Spacious Canvas Arena -->
+    <!-- キャンバスアリーナ -->
     <main class="relative w-full flex-1 flex items-center justify-center my-1.5 sm:my-2 overflow-hidden min-h-0">
       <div id="arenaBox" class="relative w-full h-full bg-slate-950 rounded-2xl sm:rounded-3xl overflow-hidden border-2 border-slate-700/90 shadow-2xl flex items-center justify-center ring-1 ring-cyan-500/20">
         <canvas id="gameCanvas" class="w-full h-full block cursor-crosshair"></canvas>
 
-        <!-- Goal Popup Animation -->
+        <!-- ゴールポップアップ -->
         <div id="goalBanner" class="absolute pointer-events-none opacity-0 scale-50 transition-all duration-300 font-neon text-4xl sm:text-6xl font-black tracking-widest px-8 sm:px-12 py-3 rounded-2xl backdrop-blur-xl border border-white/20 shadow-2xl z-30">
           GOAL!
         </div>
 
-        <!-- Disconnect Toast -->
+        <!-- 切断通知 -->
         <div id="disconnectToast" class="absolute top-4 pointer-events-none hidden px-4 py-2 bg-rose-950/90 border border-rose-500 text-rose-300 rounded-xl text-xs font-bold shadow-xl z-40 transition animate-bounce">
           ⚠️ 相手プレイヤーとの接続が切れました
         </div>
 
-        <!-- Pause Modal -->
+        <!-- ポーズメニュー -->
         <div id="pausePopup" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm flex flex-col items-center justify-center hidden z-40 p-6 text-center">
           <h3 class="font-neon text-2xl font-bold mb-4 text-cyan-400 tracking-wider">GAME PAUSED</h3>
-          <p class="text-xs text-slate-400 mb-5">戦略を整えて再開しましょう</p>
           <div class="space-y-3 w-48">
-            <button type="button" id="btnResumeMatch" class="w-full py-2.5 bg-cyan-500 text-slate-950 font-bold font-neon rounded-xl hover:bg-cyan-400 transition text-sm shadow-lg shadow-cyan-950/50">
+            <button type="button" id="btnResumeMatch" class="w-full py-2.5 bg-cyan-500 text-slate-950 font-bold font-neon rounded-xl hover:bg-cyan-400 transition text-sm shadow">
               再開する
             </button>
             <button type="button" id="btnPauseReturnHome" class="w-full py-2 bg-slate-800 text-slate-300 font-semibold rounded-xl hover:bg-slate-700 transition text-xs border border-slate-700">
@@ -354,7 +349,7 @@
           </div>
         </div>
 
-        <!-- Match Result Modal -->
+        <!-- 試合結果モーダル -->
         <div id="resultModal" class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center hidden z-40 p-6 text-center">
           <h2 id="resultHeading" class="font-neon text-3xl sm:text-4xl font-extrabold mb-2 tracking-wider">
             YOU WIN!
@@ -374,15 +369,15 @@
       </div>
     </main>
 
-    <!-- Footer Guide -->
+    <!-- フッター -->
     <footer class="w-full flex items-center justify-between px-2 text-[11px] text-slate-400 shrink-0">
       <div id="footerTips" class="truncate">
         <span class="text-cyan-400 font-bold">1P:</span> マウス/タッチ/矢印キー
         <span class="mx-1 text-slate-600">|</span>
-        <span class="text-rose-400 font-bold">2P:</span> タッチ/[W,A,S,D]キー
+        <span class="text-rose-400 font-bold">2P/CPU:</span> タッチ/[W,A,S,D]キー
       </div>
       <div class="hidden sm:block text-slate-500 font-mono text-[10px]">
-        NEON DUEL HOCKEY P2P
+        NEON DUEL HOCKEY STABLE
       </div>
     </footer>
   </div>
@@ -529,7 +524,6 @@
     let peerConn = null;
     let lastPingSendTime = 0;
     let currentPing = 0;
-    let isPeerConnected = false;
 
     let cpuDifficulty = 'normal';
     let targetScore = 5;
@@ -548,44 +542,13 @@
     const particles = [];
 
     const puck = {
-      x: 0,
-      y: 0,
-      radius: 6.8,
-      vx: 0,
-      vy: 0,
-      maxSpeed: 22.0,
-      trail: [],
-      maxTrail: 12
+      x: 0, y: 0, radius: 6.8, vx: 0, vy: 0, maxSpeed: 22.0, trail: [], maxTrail: 12
     };
 
-    const barP1 = {
-      x: 0,
-      y: 0,
-      w: 56,
-      h: 12,
-      vx: 0,
-      vy: 0,
-      color: PALETTES[0]
-    };
+    const barP1 = { x: 0, y: 0, w: 56, h: 12, vx: 0, vy: 0, color: PALETTES[0] };
+    const barP2 = { x: 0, y: 0, w: 56, h: 12, vx: 0, vy: 0, color: PALETTES[3] };
 
-    const barP2 = {
-      x: 0,
-      y: 0,
-      w: 56,
-      h: 12,
-      vx: 0,
-      vy: 0,
-      color: PALETTES[3]
-    };
-
-    const remoteTarget = {
-      puckX: 0,
-      puckY: 0,
-      p2X: 0,
-      p2Y: 0,
-      p1X: 0,
-      p1Y: 0
-    };
+    const remoteTarget = { puckX: 0, puckY: 0, p2X: 0, p2Y: 0 };
 
     let canvas, ctx, arenaBox;
     let homeScreen, howToModal, pausePopup, resultModal, goalBanner, disconnectToast;
@@ -609,10 +572,8 @@
 
       const paddleW = Math.max(arenaW * 0.10, 52);
       const paddleH = Math.max(arenaH * 0.019, 11);
-      barP1.w = paddleW;
-      barP1.h = paddleH;
-      barP2.w = paddleW;
-      barP2.h = paddleH;
+      barP1.w = paddleW; barP1.h = paddleH;
+      barP2.w = paddleW; barP2.h = paddleH;
 
       puck.radius = Math.max(paddleH * 0.58, 6.8);
 
@@ -631,7 +592,6 @@
       puck.x = arenaW / 2;
       puck.y = arenaH / 2;
       puck.trail = [];
-
       const angle = (servingPlayer === 1 ? Math.PI / 2 : -Math.PI / 2) + (Math.random() * 0.6 - 0.3);
       const initSpeed = Math.min(arenaH * 0.0055, 5.5);
       puck.vx = Math.cos(angle) * initSpeed;
@@ -644,13 +604,8 @@
         const ang = Math.random() * Math.PI * 2;
         const spd = 1.0 + Math.random() * 4.5;
         particles.push({
-          x, y,
-          vx: Math.cos(ang) * spd,
-          vy: Math.sin(ang) * spd,
-          radius: Math.random() * 2.0 + 1.0,
-          color,
-          alpha: 1,
-          decay: 0.025 + Math.random() * 0.03
+          x, y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
+          radius: Math.random() * 2.0 + 1.0, color, alpha: 1, decay: 0.025 + Math.random() * 0.03
         });
       }
     }
@@ -679,13 +634,11 @@
     function resolvePaddleCollision(puckObj, bar) {
       const halfW = bar.w / 2;
       const halfH = bar.h / 2;
-
       const cx = Math.max(bar.x - halfW, Math.min(puckObj.x, bar.x + halfW));
       const cy = Math.max(bar.y - halfH, Math.min(puckObj.y, bar.y + halfH));
-
-      let dx = puckObj.x - cx;
-      let dy = puckObj.y - cy;
-      let dist = Math.hypot(dx, dy);
+      const dx = puckObj.x - cx;
+      const dy = puckObj.y - cy;
+      const dist = Math.hypot(dx, dy);
 
       if (dist < puckObj.radius) {
         let nx = 0, ny = 0;
@@ -707,7 +660,6 @@
         if (velAlongNormal < 0) {
           const restitution = 1.15;
           const impulse = -(1 + restitution) * velAlongNormal;
-
           puckObj.vx += nx * impulse + bar.vx * 0.45;
           puckObj.vy += ny * impulse + bar.vy * 0.45;
 
@@ -717,8 +669,7 @@
           const speed = Math.hypot(puckObj.vx, puckObj.vy);
           if (speed > puckObj.maxSpeed) {
             const factor = puckObj.maxSpeed / speed;
-            puckObj.vx *= factor;
-            puckObj.vy *= factor;
+            puckObj.vx *= factor; puckObj.vy *= factor;
           }
 
           AudioEngine.playPaddle(speed / 9);
@@ -733,7 +684,6 @@
 
     function updateCpuAi() {
       if (gameMode !== 'PvC') return;
-
       const profile = {
         easy:   { speed: 4.8, predict: 0.22, line: 0.14, jitter: 12 },
         normal: { speed: 7.8, predict: 0.58, line: 0.16, jitter: 5 },
@@ -743,7 +693,6 @@
 
       let targetX = arenaW / 2;
       let targetY = arenaH * profile.line;
-
       const isBehind = puck.y < barP2.y + barP2.h / 2 && puck.y > 0;
 
       if (isBehind) {
@@ -760,18 +709,11 @@
         if (isApproaching || puck.y < arenaH * 0.48) {
           const time = Math.max(0.1, (barP2.y - puck.y) / Math.min(-1, puck.vy));
           let predX = puck.x + puck.vx * time * profile.predict;
-
           if (predX < puck.radius) predX = puck.radius + Math.abs(predX);
           else if (predX > arenaW - puck.radius) predX = (arenaW - puck.radius) - (predX - (arenaW - puck.radius));
-
           predX += (Math.random() - 0.5) * profile.jitter;
           targetX = Math.max(barP2.w / 2, Math.min(arenaW - barP2.w / 2, predX));
-
-          if (puck.y < arenaH * 0.48 && puck.y > barP2.y) {
-            targetY = Math.min(arenaH * 0.48, puck.y + 6);
-          } else {
-            targetY = Math.max(barP2.h / 2 + goalH + 4, arenaH * profile.line);
-          }
+          targetY = Math.max(barP2.h / 2 + goalH + 4, arenaH * profile.line);
         } else {
           targetX = arenaW / 2 + Math.sin(Date.now() * 0.002) * (arenaW * 0.22);
           targetY = arenaH * profile.line;
@@ -786,11 +728,9 @@
         const step = Math.min(dist, profile.speed);
         barP2.vx = (dx / dist) * step;
         barP2.vy = (dy / dist) * step;
-        barP2.x += barP2.vx;
-        barP2.y += barP2.vy;
+        barP2.x += barP2.vx; barP2.y += barP2.vy;
       } else {
-        barP2.vx = 0;
-        barP2.vy = 0;
+        barP2.vx = 0; barP2.vy = 0;
       }
 
       barP2.x = Math.max(barP2.w / 2, Math.min(arenaW - barP2.w / 2, barP2.x));
@@ -809,28 +749,22 @@
         const ty = t.clientY - rect.top;
 
         if (gameMode === 'Online') {
-          const prevX = barP1.x;
-          const prevY = barP1.y;
+          const prevX = barP1.x; const prevY = barP1.y;
           barP1.x = Math.max(barP1.w / 2, Math.min(arenaW - barP1.w / 2, tx));
           barP1.y = Math.max(arenaH * 0.52, Math.min(arenaH - barP1.h / 2 - 6, ty));
-          barP1.vx = barP1.x - prevX;
-          barP1.vy = barP1.y - prevY;
+          barP1.vx = barP1.x - prevX; barP1.vy = barP1.y - prevY;
           sendOnlinePaddlePos();
         } else {
           if (ty >= arenaH * 0.5) {
-            const prevX = barP1.x;
-            const prevY = barP1.y;
+            const prevX = barP1.x; const prevY = barP1.y;
             barP1.x = Math.max(barP1.w / 2, Math.min(arenaW - barP1.w / 2, tx));
             barP1.y = Math.max(arenaH * 0.52, Math.min(arenaH - barP1.h / 2 - 6, ty));
-            barP1.vx = barP1.x - prevX;
-            barP1.vy = barP1.y - prevY;
+            barP1.vx = barP1.x - prevX; barP1.vy = barP1.y - prevY;
           } else if (gameMode === 'PvP' && ty < arenaH * 0.5) {
-            const prevX = barP2.x;
-            const prevY = barP2.y;
+            const prevX = barP2.x; const prevY = barP2.y;
             barP2.x = Math.max(barP2.w / 2, Math.min(arenaW - barP2.w / 2, tx));
             barP2.y = Math.max(barP2.h / 2 + 6, Math.min(arenaH * 0.48, ty));
-            barP2.vx = barP2.x - prevX;
-            barP2.vy = barP2.y - prevY;
+            barP2.vx = barP2.x - prevX; barP2.vy = barP2.y - prevY;
           }
         }
       }
@@ -846,12 +780,10 @@
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
 
-        const prevX = barP1.x;
-        const prevY = barP1.y;
+        const prevX = barP1.x; const prevY = barP1.y;
         barP1.x = Math.max(barP1.w / 2, Math.min(arenaW - barP1.w / 2, mx));
         barP1.y = Math.max(arenaH * 0.52, Math.min(arenaH - barP1.h / 2 - 6, my));
-        barP1.vx = barP1.x - prevX;
-        barP1.vy = barP1.y - prevY;
+        barP1.vx = barP1.x - prevX; barP1.vy = barP1.y - prevY;
 
         if (gameMode === 'Online') {
           sendOnlinePaddlePos();
@@ -862,7 +794,6 @@
         AudioEngine.init();
         keys[e.key] = true;
       });
-
       window.addEventListener('keyup', (e) => {
         keys[e.key] = false;
       });
@@ -880,12 +811,8 @@
       if (p1dx !== 0 || p1dy !== 0) {
         barP1.x = Math.max(barP1.w / 2, Math.min(arenaW - barP1.w / 2, barP1.x + p1dx));
         barP1.y = Math.max(arenaH * 0.52, Math.min(arenaH - barP1.h / 2 - 6, barP1.y + p1dy));
-        barP1.vx = p1dx;
-        barP1.vy = p1dy;
-
-        if (gameMode === 'Online') {
-          sendOnlinePaddlePos();
-        }
+        barP1.vx = p1dx; barP1.vy = p1dy;
+        if (gameMode === 'Online') sendOnlinePaddlePos();
       }
 
       if (gameMode === 'PvP') {
@@ -898,8 +825,7 @@
         if (p2dx !== 0 || p2dy !== 0) {
           barP2.x = Math.max(barP2.w / 2, Math.min(arenaW - barP2.w / 2, barP2.x + p2dx));
           barP2.y = Math.max(barP2.h / 2 + 6, Math.min(arenaH * 0.48, barP2.y + p2dy));
-          barP2.vx = p2dx;
-          barP2.vy = p2dy;
+          barP2.vx = p2dx; barP2.vy = p2dy;
         }
       }
     }
@@ -924,18 +850,15 @@
           barP2.y += (remoteTarget.p2Y - barP2.y) * 0.6;
         }
 
-        barP1.vx *= 0.85;
-        barP1.vy *= 0.85;
+        barP1.vx *= 0.85; barP1.vy *= 0.85;
         if (gameMode === 'PvP') {
-          barP2.vx *= 0.85;
-          barP2.vy *= 0.85;
+          barP2.vx *= 0.85; barP2.vy *= 0.85;
         }
 
         const SUB_STEPS = 8;
         const dt = 1 / SUB_STEPS;
         const goalLeft = (arenaW - goalW) / 2;
         const goalRight = goalLeft + goalW;
-
         let goalTriggered = false;
 
         for (let s = 0; s < SUB_STEPS; s++) {
@@ -944,18 +867,10 @@
 
           if (puck.x - puck.radius <= 0) {
             puck.x = puck.radius;
-            if (puck.vx < 0) {
-              puck.vx = -puck.vx * 0.98;
-              AudioEngine.playWall();
-              spawnSparks(puck.x, puck.y, '#38bdf8', 5);
-            }
+            if (puck.vx < 0) { puck.vx = -puck.vx * 0.98; AudioEngine.playWall(); }
           } else if (puck.x + puck.radius >= arenaW) {
             puck.x = arenaW - puck.radius;
-            if (puck.vx > 0) {
-              puck.vx = -puck.vx * 0.98;
-              AudioEngine.playWall();
-              spawnSparks(puck.x, puck.y, '#38bdf8', 5);
-            }
+            if (puck.vx > 0) { puck.vx = -puck.vx * 0.98; AudioEngine.playWall(); }
           }
 
           if (puck.y - puck.radius <= 0) {
@@ -975,11 +890,7 @@
               break;
             } else {
               puck.y = puck.radius;
-              if (puck.vy < 0) {
-                puck.vy = -puck.vy * 0.98;
-                AudioEngine.playWall();
-                spawnSparks(puck.x, puck.y, '#94a3b8', 4);
-              }
+              if (puck.vy < 0) { puck.vy = -puck.vy * 0.98; AudioEngine.playWall(); }
             }
           }
 
@@ -1000,11 +911,7 @@
               break;
             } else {
               puck.y = arenaH - puck.radius;
-              if (puck.vy > 0) {
-                puck.vy = -puck.vy * 0.98;
-                AudioEngine.playWall();
-                spawnSparks(puck.x, puck.y, '#94a3b8', 4);
-              }
+              if (puck.vy > 0) { puck.vy = -puck.vy * 0.98; AudioEngine.playWall(); }
             }
           }
 
@@ -1012,8 +919,7 @@
           resolvePaddleCollision(puck, barP2);
         }
 
-        puck.vx *= 0.9985;
-        puck.vy *= 0.9985;
+        puck.vx *= 0.9985; puck.vy *= 0.9985;
 
         if (gameMode === 'Online' && isOnlineHost && peerConn && peerConn.open) {
           peerConn.send({
@@ -1022,8 +928,7 @@
             py: (arenaH - puck.y) / arenaH,
             p1x: (arenaW - barP1.x) / arenaW,
             p1y: (arenaH - barP1.y) / arenaH,
-            s1: scoreP2,
-            s2: scoreP1
+            s1: scoreP2, s2: scoreP1
           });
         }
       }
@@ -1033,9 +938,7 @@
 
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.alpha -= p.decay;
+        p.x += p.vx; p.y += p.vy; p.alpha -= p.decay;
         if (p.alpha <= 0) particles.splice(i, 1);
       }
 
@@ -1054,12 +957,12 @@
         if (scoreP1 >= targetScore) {
           resultHeading.textContent = 'VICTORY! 🏆';
           resultHeading.style.color = barP1.color.hex;
-          resultSub.textContent = 'スピードと技巧で完全勝利を掴み取りました！';
+          resultSub.textContent = '見事勝利をつかみました！';
           if (gameMode === 'PvC') Records.addWin();
         } else {
           resultHeading.textContent = gameMode === 'PvC' ? 'CPU WINS! 🤖' : 'OPPONENT WINS! 👑';
           resultHeading.style.color = barP2.color.hex;
-          resultSub.textContent = '白熱の攻防の末に惜敗…！リベンジを果たしましょう！';
+          resultSub.textContent = '惜敗…！リベンジしましょう！';
           if (gameMode === 'PvC') Records.resetStreak();
         }
       }
@@ -1072,7 +975,6 @@
       }
 
       tickPhysics();
-
       ctx.save();
 
       if (screenShake > 0) {
@@ -1081,70 +983,37 @@
         ctx.translate(sx, sy);
       }
 
-      // Background Field
       ctx.fillStyle = '#030712';
       ctx.fillRect(0, 0, arenaW, arenaH);
 
       const goalLeft = (arenaW - goalW) / 2;
 
-      // Top Goal
+      // ゴール枠
       ctx.save();
-      ctx.shadowColor = barP2.color.glow;
-      ctx.shadowBlur = 14;
+      ctx.shadowColor = barP2.color.glow; ctx.shadowBlur = 14;
       ctx.fillStyle = `${barP2.color.hex}33`;
       ctx.fillRect(goalLeft, 0, goalW, goalH);
-      ctx.strokeStyle = barP2.color.hex;
-      ctx.lineWidth = 3;
+      ctx.strokeStyle = barP2.color.hex; ctx.lineWidth = 3;
       ctx.strokeRect(goalLeft, 0, goalW, goalH);
       ctx.restore();
 
-      // Bottom Goal
       ctx.save();
-      ctx.shadowColor = barP1.color.glow;
-      ctx.shadowBlur = 14;
+      ctx.shadowColor = barP1.color.glow; ctx.shadowBlur = 14;
       ctx.fillStyle = `${barP1.color.hex}33`;
       ctx.fillRect(goalLeft, arenaH - goalH, goalW, goalH);
-      ctx.strokeStyle = barP1.color.hex;
-      ctx.lineWidth = 3;
+      ctx.strokeStyle = barP1.color.hex; ctx.lineWidth = 3;
       ctx.strokeRect(goalLeft, arenaH - goalH, goalW, goalH);
       ctx.restore();
 
-      // Goal Defense Zones
-      ctx.strokeStyle = `${barP2.color.hex}44`;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(arenaW / 2, 0, goalW * 0.70, 0, Math.PI);
-      ctx.stroke();
-
-      ctx.strokeStyle = `${barP1.color.hex}44`;
-      ctx.beginPath();
-      ctx.arc(arenaW / 2, arenaH, goalW * 0.70, Math.PI, Math.PI * 2);
-      ctx.stroke();
-
-      // Center Line & Center Ring
+      // センターライン
       ctx.save();
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([8, 8]);
-      ctx.beginPath();
-      ctx.moveTo(0, arenaH / 2);
-      ctx.lineTo(arenaW, arenaH / 2);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(arenaW / 2, arenaH / 2, arenaW * 0.12, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.lineWidth = 1.5; ctx.setLineDash([8, 8]);
+      ctx.beginPath(); ctx.moveTo(0, arenaH / 2); ctx.lineTo(arenaW, arenaH / 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(arenaW / 2, arenaH / 2, arenaW * 0.12, 0, Math.PI * 2); ctx.stroke();
       ctx.restore();
 
-      // Side Wall Highlights
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(1, 0); ctx.lineTo(1, arenaH);
-      ctx.moveTo(arenaW - 1, 0); ctx.lineTo(arenaW - 1, arenaH);
-      ctx.stroke();
-
-      // Puck Trail
+      // パックの軌跡
       for (let i = 0; i < puck.trail.length; i++) {
         const pt = puck.trail[i];
         const progress = (i + 1) / puck.trail.length;
@@ -1154,54 +1023,35 @@
         ctx.fill();
       }
 
-      // Puck Body
+      // パック
       ctx.save();
-      ctx.shadowColor = '#facc15';
-      ctx.shadowBlur = 14;
+      ctx.shadowColor = '#facc15'; ctx.shadowBlur = 14;
       ctx.fillStyle = '#fef08a';
-      ctx.beginPath();
-      ctx.arc(puck.x, puck.y, puck.radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#eab308';
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      ctx.beginPath(); ctx.arc(puck.x, puck.y, puck.radius, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#eab308'; ctx.lineWidth = 2; ctx.stroke();
       ctx.restore();
 
-      // Paddles
+      // パドル描画
       function drawPaddle(bar) {
         ctx.save();
-        ctx.shadowColor = bar.color.glow;
-        ctx.shadowBlur = 14;
-
-        const bx = bar.x - bar.w / 2;
-        const by = bar.y - bar.h / 2;
-        const rad = bar.h / 2;
-
+        ctx.shadowColor = bar.color.glow; ctx.shadowBlur = 14;
+        const bx = bar.x - bar.w / 2; const by = bar.y - bar.h / 2; const rad = bar.h / 2;
         ctx.fillStyle = bar.color.hex;
-        ctx.beginPath();
-        ctx.roundRect(bx, by, bar.w, bar.h, rad);
-        ctx.fill();
-
+        ctx.beginPath(); ctx.roundRect(bx, by, bar.w, bar.h, rad); ctx.fill();
         ctx.fillStyle = bar.color.core;
-        ctx.beginPath();
-        ctx.roundRect(bx + 2.5, by + 2, bar.w - 5, bar.h - 4, rad * 0.7);
-        ctx.fill();
+        ctx.beginPath(); ctx.roundRect(bx + 2.5, by + 2, bar.w - 5, bar.h - 4, rad * 0.7); ctx.fill();
         ctx.restore();
       }
 
       drawPaddle(barP2);
       drawPaddle(barP1);
 
-      // Sparks
+      // パーティクル
       for (const p of particles) {
         ctx.save();
         ctx.globalAlpha = p.alpha;
-        ctx.fillStyle = p.color;
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 6;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillStyle = p.color; ctx.shadowColor = p.color; ctx.shadowBlur = 6;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
       }
 
@@ -1211,18 +1061,15 @@
 
     function updateBadgeStyles() {
       if (!p1HudBadge || !p2HudBadge) return;
-
       p1HudBadge.style.color = barP1.color.hex;
       p1HudBadge.style.borderColor = `${barP1.color.hex}66`;
       p1HudBadge.style.backgroundColor = `${barP1.color.hex}22`;
       scoreP1El.style.color = barP1.color.hex;
-      scoreP1El.style.textShadow = `0 0 12px ${barP1.color.glow}`;
 
       p2HudBadge.style.color = barP2.color.hex;
       p2HudBadge.style.borderColor = `${barP2.color.hex}66`;
       p2HudBadge.style.backgroundColor = `${barP2.color.hex}22`;
       scoreP2El.style.color = barP2.color.hex;
-      scoreP2El.style.textShadow = `0 0 12px ${barP2.color.glow}`;
 
       if (gameMode === 'PvP') {
         p2HudBadge.textContent = '2P';
@@ -1235,52 +1082,30 @@
     }
 
     function resetMatchSession() {
-      scoreP1 = 0;
-      scoreP2 = 0;
-      scoreP1El.textContent = '0';
-      scoreP2El.textContent = '0';
-      isGameOver = false;
-      isPaused = false;
+      scoreP1 = 0; scoreP2 = 0;
+      scoreP1El.textContent = '0'; scoreP2El.textContent = '0';
+      isGameOver = false; isPaused = false;
       if (pausePopup) pausePopup.classList.add('hidden');
       if (resultModal) resultModal.classList.add('hidden');
       updateBadgeStyles();
       resetPuck(Math.random() > 0.5 ? 1 : 2);
     }
 
-    // ==================== PEERJS ROBUST NETWORKING ====================
+    // ==================== PeerJS接続（安定版） ====================
     function initPeerInstance(onReady = null) {
       if (peer) {
         try { peer.destroy(); } catch (e) {}
       }
 
-      const peerConfig = {
-        config: {
-          iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:openrelay.metered.ca:80' },
-            {
-              urls: 'turn:openrelay.metered.ca:80',
-              username: 'openrelayproject',
-              credential: 'openrelayproject'
-            },
-            {
-              urls: 'turn:openrelay.metered.ca:443',
-              username: 'openrelayproject',
-              credential: 'openrelayproject'
-            }
-          ],
-          iceCandidatePoolSize: 10
-        }
-      };
-
-      // 独自の文字列IDを指定せず、PeerJSクラウドに自動生成（IDレス）させることでID競合やエラーを回避
-      peer = new Peer(peerConfig);
+      // 標準の無料PeerJSクラウドシグナリングサーバー（余計なカスタムSTUNを排除して接続性を最大化）
+      peer = new Peer({
+        debug: 2
+      });
 
       peer.on('open', (id) => {
         const netStatusBadge = document.getElementById('netStatusBadge');
         if (netStatusBadge) {
-          netStatusBadge.textContent = 'オンライン接続OK';
+          netStatusBadge.textContent = 'サーバー接続成功';
           netStatusBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono';
         }
         if (onReady) onReady(id);
@@ -1292,10 +1117,10 @@
       });
 
       peer.on('error', (err) => {
-        console.warn('Peer error:', err);
+        console.warn('PeerJS Error:', err);
         const netStatusBadge = document.getElementById('netStatusBadge');
         if (netStatusBadge) {
-          netStatusBadge.textContent = 'エラー: ' + (err.type || '接続失敗');
+          netStatusBadge.textContent = '接続エラー: ' + (err.type || '不明');
           netStatusBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 font-mono';
         }
       });
@@ -1305,10 +1130,9 @@
       peerConn = conn;
 
       conn.on('open', () => {
-        isPeerConnected = true;
         const netStatusBadge = document.getElementById('netStatusBadge');
         if (netStatusBadge) {
-          netStatusBadge.textContent = '対戦相手と接続確立！';
+          netStatusBadge.textContent = '対戦相手と接続完了！';
           netStatusBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono';
         }
 
@@ -1335,15 +1159,10 @@
       });
 
       conn.on('close', () => {
-        isPeerConnected = false;
         if (disconnectToast) {
           disconnectToast.classList.remove('hidden');
           setTimeout(() => disconnectToast.classList.add('hidden'), 3500);
         }
-      });
-
-      conn.on('error', (err) => {
-        console.warn('Connection error:', err);
       });
     }
 
@@ -1357,17 +1176,12 @@
 
     function handlePeerMessage(data) {
       if (!data || !data.t) return;
-
       if (data.t === 'handshake') {
         barP2.color = PALETTES[data.colorIndex] || PALETTES[3];
-        if (!isOnlineHost && data.targetScore) {
-          targetScore = data.targetScore;
-        }
+        if (!isOnlineHost && data.targetScore) targetScore = data.targetScore;
         updateBadgeStyles();
       } else if (data.t === 'start_match') {
-        if (!isOnlineHost) {
-          launchOnlineMatch();
-        }
+        if (!isOnlineHost) launchOnlineMatch();
       } else if (data.t === 'paddle') {
         remoteTarget.p2X = (1 - data.x) * arenaW;
         remoteTarget.p2Y = (1 - data.y) * arenaH;
@@ -1376,21 +1190,16 @@
         remoteTarget.puckY = data.py * arenaH;
         remoteTarget.p2X = data.p1x * arenaW;
         remoteTarget.p2Y = data.p1y * arenaH;
-        scoreP1 = data.s1;
-        scoreP2 = data.s2;
-        scoreP1El.textContent = scoreP1;
-        scoreP2El.textContent = scoreP2;
+        scoreP1 = data.s1; scoreP2 = data.s2;
+        scoreP1El.textContent = scoreP1; scoreP2El.textContent = scoreP2;
       } else if (data.t === 'goal') {
         const scorer = data.scorer === 'P1' ? 'P2' : 'P1';
-        AudioEngine.playGoal();
-        triggerShake(12);
+        AudioEngine.playGoal(); triggerShake(12);
         displayGoalToast(scorer);
         spawnSparks(arenaW / 2, arenaH / 2, '#facc15', 24);
         verifyMatchWinner();
       } else if (data.t === 'ping') {
-        if (peerConn && peerConn.open) {
-          peerConn.send({ t: 'pong', time: data.time });
-        }
+        if (peerConn && peerConn.open) peerConn.send({ t: 'pong', time: data.time });
       } else if (data.t === 'pong') {
         currentPing = Math.max(1, Math.round(Date.now() - data.time));
         if (pingVal) pingVal.textContent = currentPing;
@@ -1401,19 +1210,12 @@
 
     function sendOnlinePaddlePos() {
       if (gameMode !== 'Online' || !peerConn || !peerConn.open) return;
-      peerConn.send({
-        t: 'paddle',
-        x: barP1.x / arenaW,
-        y: barP1.y / arenaH
-      });
+      peerConn.send({ t: 'paddle', x: barP1.x / arenaW, y: barP1.y / arenaH });
     }
 
     function sendOnlineGoalEvent(scorer) {
       if (gameMode !== 'Online' || !peerConn || !peerConn.open) return;
-      peerConn.send({
-        t: 'goal',
-        scorer: scorer
-      });
+      peerConn.send({ t: 'goal', scorer });
     }
 
     function startPingCycle() {
@@ -1425,46 +1227,33 @@
       }, 2000);
     }
 
-    // ==================== UI INITIALIZATION ====================
+    // ==================== UI初期化 ====================
     function renderPaletteOptions() {
       const p1PaletteEl = document.getElementById('p1ColorPalette');
       const p2PaletteEl = document.getElementById('p2ColorPalette');
       const p1Label = document.getElementById('p1ColorLabel');
       const p2Label = document.getElementById('p2ColorLabel');
-
       if (!p1PaletteEl || !p2PaletteEl) return;
 
-      p1PaletteEl.innerHTML = '';
-      p2PaletteEl.innerHTML = '';
-
+      p1PaletteEl.innerHTML = ''; p2PaletteEl.innerHTML = '';
       PALETTES.forEach((col, idx) => {
         const btn1 = document.createElement('button');
         btn1.type = 'button';
-        btn1.className = `color-dot ${idx === p1ColorIndex ? 'active ring-2 ring-white' : 'opacity-70 hover:opacity-100'}`;
+        btn1.className = `color-dot ${idx === p1ColorIndex ? 'active ring-2 ring-white' : 'opacity-70'}`;
         btn1.style.backgroundColor = col.hex;
-        btn1.style.color = col.glow;
         btn1.addEventListener('click', () => {
-          p1ColorIndex = idx;
-          barP1.color = col;
-          p1Label.textContent = col.name;
-          p1Label.style.color = col.hex;
-          renderPaletteOptions();
-          updateBadgeStyles();
+          p1ColorIndex = idx; barP1.color = col; p1Label.textContent = col.name;
+          renderPaletteOptions(); updateBadgeStyles();
         });
         p1PaletteEl.appendChild(btn1);
 
         const btn2 = document.createElement('button');
         btn2.type = 'button';
-        btn2.className = `color-dot ${idx === p2ColorIndex ? 'active ring-2 ring-white' : 'opacity-70 hover:opacity-100'}`;
+        btn2.className = `color-dot ${idx === p2ColorIndex ? 'active ring-2 ring-white' : 'opacity-70'}`;
         btn2.style.backgroundColor = col.hex;
-        btn2.style.color = col.glow;
         btn2.addEventListener('click', () => {
-          p2ColorIndex = idx;
-          barP2.color = col;
-          p2Label.textContent = col.name;
-          p2Label.style.color = col.hex;
-          renderPaletteOptions();
-          updateBadgeStyles();
+          p2ColorIndex = idx; barP2.color = col; p2Label.textContent = col.name;
+          renderPaletteOptions(); updateBadgeStyles();
         });
         p2PaletteEl.appendChild(btn2);
       });
@@ -1510,6 +1299,7 @@
       const targetPeerInput = document.getElementById('targetPeerInput');
       const btnConnectPeer = document.getElementById('btnConnectPeer');
       const btnHostStartMatch = document.getElementById('btnHostStartMatch');
+      const btnFallbackLocal = document.getElementById('btnFallbackLocal');
 
       const btnStartGame = document.getElementById('btnStartGame');
       const btnHowToPlay = document.getElementById('btnHowToPlay');
@@ -1524,190 +1314,107 @@
       const btnRematch = document.getElementById('btnRematch');
       const btnResultHome = document.getElementById('btnResultHome');
 
-      const bindClick = (el, handler) => {
-        if (!el) return;
-        el.addEventListener('click', handler);
-      };
+      const bindClick = (el, handler) => { if (el) el.addEventListener('click', handler); };
 
       bindClick(btnModeCpu, (e) => {
-        e.stopPropagation();
-        AudioEngine.init();
-        gameMode = 'PvC';
+        e.stopPropagation(); AudioEngine.init(); gameMode = 'PvC';
         btnModeCpu.className = 'py-2 px-2 rounded-xl border-2 border-cyan-500 bg-cyan-500/20 text-cyan-300 font-bold text-xs flex flex-col items-center justify-center gap-1 transition shadow-lg shadow-cyan-950/50';
-        btnModeOnline.className = 'py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-slate-600';
-        btnModePvp.className = 'py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-slate-600';
-        diffSection.style.display = 'block';
-        ptsSection.style.display = 'block';
-        onlinePanel.classList.add('hidden');
-        btnStartGame.style.display = 'flex';
-        p2ColorGroup.style.display = 'block';
-        p2ColorHeading.textContent = '相手のマレット色 (CPU)';
+        btnModeOnline.className = 'py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition';
+        btnModePvp.className = 'py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition';
+        diffSection.style.display = 'block'; ptsSection.style.display = 'block'; onlinePanel.classList.add('hidden');
+        btnStartGame.style.display = 'flex'; p2ColorGroup.style.display = 'block'; p2ColorHeading.textContent = '相手のマレット色 (CPU)';
       });
 
       bindClick(btnModeOnline, (e) => {
-        e.stopPropagation();
-        AudioEngine.init();
-        gameMode = 'Online';
+        e.stopPropagation(); AudioEngine.init(); gameMode = 'Online';
         btnModeOnline.className = 'py-2 px-2 rounded-xl border-2 border-sky-400 bg-sky-500/20 text-sky-200 font-bold text-xs flex flex-col items-center justify-center gap-1 transition shadow-lg shadow-sky-950/50';
-        btnModeCpu.className = 'py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-slate-600';
-        btnModePvp.className = 'py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-slate-600';
-        diffSection.style.display = 'none';
-        ptsSection.style.display = 'block';
-        onlinePanel.classList.remove('hidden');
-        btnStartGame.style.display = 'none';
-        p2ColorGroup.style.display = 'none';
+        btnModeCpu.className = 'py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition';
+        btnModePvp.className = 'py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition';
+        diffSection.style.display = 'none'; ptsSection.style.display = 'block'; onlinePanel.classList.remove('hidden');
+        btnStartGame.style.display = 'none'; p2ColorGroup.style.display = 'none';
         initPeerInstance();
       });
 
       bindClick(btnModePvp, (e) => {
-        e.stopPropagation();
-        AudioEngine.init();
-        gameMode = 'PvP';
+        e.stopPropagation(); AudioEngine.init(); gameMode = 'PvP';
         btnModePvp.className = 'py-2 px-2 rounded-xl border-2 border-rose-500 bg-rose-500/20 text-rose-300 font-bold text-xs flex flex-col items-center justify-center gap-1 transition shadow-lg shadow-rose-950/50';
-        btnModeCpu.className = 'py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-slate-600';
-        btnModeOnline.className = 'py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition hover:border-slate-600';
-        diffSection.style.display = 'none';
-        ptsSection.style.display = 'block';
-        onlinePanel.classList.add('hidden');
-        btnStartGame.style.display = 'flex';
-        p2ColorGroup.style.display = 'block';
-        p2ColorHeading.textContent = '2Pのマレット色';
+        btnModeCpu.className = 'py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition';
+        btnModeOnline.className = 'py-2 px-2 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-400 font-bold text-xs flex flex-col items-center justify-center gap-1 transition';
+        diffSection.style.display = 'none'; ptsSection.style.display = 'block'; onlinePanel.classList.add('hidden');
+        btnStartGame.style.display = 'flex'; p2ColorGroup.style.display = 'block'; p2ColorHeading.textContent = '2Pのマレット色';
       });
 
       bindClick(btnCreateRoom, () => {
-        hostInfoBox.classList.remove('hidden');
-        joinInfoBox.classList.add('hidden');
-        isOnlineHost = true;
-        myPeerIdDisplay.textContent = 'サーバーからID取得中...';
-        initPeerInstance((id) => {
-          myPeerIdDisplay.textContent = id;
-        });
+        hostInfoBox.classList.remove('hidden'); joinInfoBox.classList.add('hidden'); isOnlineHost = true;
+        myPeerIdDisplay.textContent = 'IDを生成中...';
+        initPeerInstance((id) => { myPeerIdDisplay.textContent = id; });
       });
 
       bindClick(btnJoinRoom, () => {
-        joinInfoBox.classList.remove('hidden');
-        hostInfoBox.classList.add('hidden');
-        isOnlineHost = false;
-        if (!peer || peer.destroyed) {
-          initPeerInstance();
-        }
+        joinInfoBox.classList.remove('hidden'); hostInfoBox.classList.add('hidden'); isOnlineHost = false;
+        if (!peer || peer.destroyed) initPeerInstance();
       });
 
       bindClick(btnCopyInvite, () => {
         const idText = myPeerIdDisplay.textContent.trim();
-        if (!idText || idText.includes('取得中')) return;
-        const url = `${window.location.origin}${window.location.pathname}?room=${idText}`;
-        navigator.clipboard.writeText(url).then(() => {
-          btnCopyInvite.textContent = '✅ 招待リンクをコピーしました！';
+        if (!idText || idText.includes('生成中')) return;
+        navigator.clipboard.writeText(idText).then(() => {
+          btnCopyInvite.textContent = '✅ ルームIDをコピーしました！';
           setTimeout(() => btnCopyInvite.textContent = '📋 招待リンクをコピー', 2000);
         });
       });
 
       bindClick(btnHostStartMatch, () => {
-        if (!peerConn || !peerConn.open) {
-          alert('対戦相手の接続を確認できませんでした。');
-          return;
-        }
+        if (!peerConn || !peerConn.open) { alert('対戦相手の接続が確認できません。'); return; }
         peerConn.send({ t: 'start_match' });
         launchOnlineMatch();
       });
 
       bindClick(btnConnectPeer, () => {
         const targetId = targetPeerInput.value.trim();
-        if (!targetId) {
-          alert('ホストのルームIDを入力してください。');
-          return;
-        }
+        if (!targetId) { alert('ルームIDを入力してください。'); return; }
         AudioEngine.init();
 
         const netStatusBadge = document.getElementById('netStatusBadge');
         if (netStatusBadge) {
-          netStatusBadge.textContent = 'ルームへ接続中...';
+          netStatusBadge.textContent = '接続中...';
           netStatusBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono animate-pulse';
         }
 
-        const connectToTarget = () => {
+        const doConnect = () => {
           try {
             const conn = peer.connect(targetId, { reliable: true });
-            if (!conn) {
-              alert('接続の確立に失敗しました。');
-              return;
-            }
-
-            const timeoutTimer = setTimeout(() => {
-              if (!conn.open) {
-                alert('接続がタイムアウトしました。IDが正しいか、ホスト側が部屋を作成しているかご確認ください。');
-                if (netStatusBadge) {
-                  netStatusBadge.textContent = '接続タイムアウト';
-                  netStatusBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 font-mono';
-                }
-                try { conn.close(); } catch(e) {}
-              }
-            }, 12000);
-
-            conn.on('open', () => {
-              clearTimeout(timeoutTimer);
-            });
-
+            if (!conn) { alert('接続に失敗しました。'); return; }
             setupPeerConnection(conn);
-          } catch (err) {
-            console.error('Connection error:', err);
-            alert('接続エラーが発生しました。');
-          }
+          } catch(e) { alert('接続エラーが発生しました。'); }
         };
 
         if (!peer || peer.destroyed) {
-          initPeerInstance(() => {
-            connectToTarget();
-          });
+          initPeerInstance(() => { doConnect(); });
         } else {
-          connectToTarget();
+          doConnect();
         }
       });
 
+      bindClick(btnFallbackLocal, () => {
+        btnModePvp.click();
+      });
+
       const diffStyles = {
-        easy: {
-          inactive: 'btn-diff py-2 rounded-xl bg-slate-800/90 text-emerald-400 text-xs font-bold border border-slate-700 hover:border-slate-600',
-          active: 'btn-diff py-2 rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-bold border-2 border-emerald-500 shadow shadow-emerald-950/50',
-          descText: 'かんたん (初心者向け)',
-          descClass: 'text-[11px] text-emerald-400 font-bold'
-        },
-        normal: {
-          inactive: 'btn-diff py-2 rounded-xl bg-slate-800/90 text-white text-xs font-bold border border-slate-700 hover:border-slate-600',
-          active: 'btn-diff py-2 rounded-xl bg-white/20 text-white text-xs font-bold border-2 border-white shadow shadow-slate-900',
-          descText: 'ふつう (バランス型)',
-          descClass: 'text-[11px] text-white font-bold'
-        },
-        hard: {
-          inactive: 'btn-diff py-2 rounded-xl bg-slate-800/90 text-amber-400 text-xs font-bold border border-slate-700 hover:border-slate-600',
-          active: 'btn-diff py-2 rounded-xl bg-amber-500/20 text-amber-300 text-xs font-bold border-2 border-amber-500 shadow shadow-amber-950/50',
-          descText: '強い (予測＆カウンター)',
-          descClass: 'text-[11px] text-amber-400 font-bold'
-        },
-        expert: {
-          inactive: 'btn-diff py-2 rounded-xl bg-slate-800/90 text-rose-500 text-xs font-bold border border-slate-700 hover:border-slate-600',
-          active: 'btn-diff py-2 rounded-xl bg-rose-500/20 text-rose-400 text-xs font-bold border-2 border-rose-500 shadow shadow-rose-950/50',
-          descText: '激ムズ (神速反応)',
-          descClass: 'text-[11px] text-rose-400 font-bold'
-        }
+        easy: { inactive: 'btn-diff py-2 rounded-xl bg-slate-800/90 text-emerald-400 text-xs font-bold border border-slate-700', active: 'btn-diff py-2 rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-bold border-2 border-emerald-500 shadow', descText: 'かんたん (初心者向け)', descClass: 'text-[11px] text-emerald-400 font-bold' },
+        normal: { inactive: 'btn-diff py-2 rounded-xl bg-slate-800/90 text-white text-xs font-bold border border-slate-700', active: 'btn-diff py-2 rounded-xl bg-white/20 text-white text-xs font-bold border-2 border-white shadow', descText: 'ふつう (バランス型)', descClass: 'text-[11px] text-white font-bold' },
+        hard: { inactive: 'btn-diff py-2 rounded-xl bg-slate-800/90 text-amber-400 text-xs font-bold border border-slate-700', active: 'btn-diff py-2 rounded-xl bg-amber-500/20 text-amber-300 text-xs font-bold border-2 border-amber-500 shadow', descText: '強い (予測＆カウンター)', descClass: 'text-[11px] text-amber-400 font-bold' },
+        expert: { inactive: 'btn-diff py-2 rounded-xl bg-slate-800/90 text-rose-500 text-xs font-bold border border-slate-700', active: 'btn-diff py-2 rounded-xl bg-rose-500/20 text-rose-400 text-xs font-bold border-2 border-rose-500 shadow', descText: '激ムズ (神速反応)', descClass: 'text-[11px] text-rose-400 font-bold' }
       };
 
-      const diffButtons = document.querySelectorAll('.btn-diff');
-      diffButtons.forEach(btn => {
+      document.querySelectorAll('.btn-diff').forEach(btn => {
         bindClick(btn, (e) => {
-          e.stopPropagation();
-          AudioEngine.init();
+          e.stopPropagation(); AudioEngine.init();
           cpuDifficulty = btn.getAttribute('data-diff');
-          
-          diffButtons.forEach(b => {
+          document.querySelectorAll('.btn-diff').forEach(b => {
             const d = b.getAttribute('data-diff');
-            if (d === cpuDifficulty) {
-              b.className = diffStyles[d].active;
-            } else {
-              b.className = diffStyles[d].inactive;
-            }
+            b.className = d === cpuDifficulty ? diffStyles[d].active : diffStyles[d].inactive;
           });
-
           if (diffDesc && diffStyles[cpuDifficulty]) {
             diffDesc.textContent = diffStyles[cpuDifficulty].descText;
             diffDesc.className = diffStyles[cpuDifficulty].descClass;
@@ -1715,13 +1422,11 @@
         });
       });
 
-      const ptsButtons = document.querySelectorAll('.btn-pts');
-      ptsButtons.forEach(btn => {
+      document.querySelectorAll('.btn-pts').forEach(btn => {
         bindClick(btn, (e) => {
-          e.stopPropagation();
-          AudioEngine.init();
+          e.stopPropagation(); AudioEngine.init();
           targetScore = parseInt(btn.getAttribute('data-pts'), 10);
-          ptsButtons.forEach(b => {
+          document.querySelectorAll('.btn-pts').forEach(b => {
             b.className = 'btn-pts py-2 rounded-xl bg-slate-800/90 text-slate-400 text-xs font-bold border border-slate-700';
           });
           btn.className = 'btn-pts py-2 rounded-xl bg-cyan-500/20 text-cyan-300 text-xs font-bold border-2 border-cyan-500 shadow';
@@ -1729,105 +1434,37 @@
       });
 
       bindClick(btnStartGame, (e) => {
-        e.stopPropagation();
-        AudioEngine.init();
-        homeScreen.classList.add('hidden');
-        resizeArena();
-        resetMatchSession();
+        e.stopPropagation(); AudioEngine.init();
+        homeScreen.classList.add('hidden'); resizeArena(); resetMatchSession();
       });
 
-      const openHowTo = (e) => {
-        e.stopPropagation();
-        howToModal.classList.remove('hidden');
-      };
-      bindClick(btnHowToPlay, openHowTo);
+      bindClick(btnHowToPlay, (e) => { e.stopPropagation(); howToModal.classList.remove('hidden'); });
+      bindClick(btnCloseHowTo, (e) => { e.stopPropagation(); howToModal.classList.add('hidden'); });
+      bindClick(btnConfirmHowTo, (e) => { e.stopPropagation(); howToModal.classList.add('hidden'); });
 
-      const closeHowTo = (e) => {
-        e.stopPropagation();
-        howToModal.classList.add('hidden');
-      };
-      bindClick(btnCloseHowTo, closeHowTo);
-      bindClick(btnConfirmHowTo, closeHowTo);
+      bindClick(btnSoundToggle, () => { AudioEngine.init(); AudioEngine.toggle(); });
+      bindClick(btnGameSoundToggle, () => { AudioEngine.init(); AudioEngine.toggle(); });
 
-      const refreshSoundIcons = () => {
-        const icon = AudioEngine.enabled ? '🔊' : '🔇';
-        if (btnSoundToggle) btnSoundToggle.textContent = icon;
-        if (btnGameSoundToggle) btnGameSoundToggle.textContent = icon;
-      };
-
-      bindClick(btnSoundToggle, (e) => {
-        e.stopPropagation();
-        AudioEngine.init();
-        AudioEngine.toggle();
-        refreshSoundIcons();
-      });
-
-      bindClick(btnGameSoundToggle, (e) => {
-        e.stopPropagation();
-        AudioEngine.init();
-        AudioEngine.toggle();
-        refreshSoundIcons();
-      });
-
-      bindClick(btnBackToHome, (e) => {
-        e.stopPropagation();
-        isPaused = true;
-        homeScreen.classList.remove('hidden');
-        Records.refreshUI();
-      });
-
-      bindClick(btnPauseMatch, (e) => {
-        e.stopPropagation();
+      bindClick(btnBackToHome, () => { isPaused = true; homeScreen.classList.remove('hidden'); Records.refreshUI(); });
+      bindClick(btnPauseMatch, () => {
         if (gameMode === 'Online') return;
         isPaused = !isPaused;
-        if (isPaused) pausePopup.classList.remove('hidden');
-        else pausePopup.classList.add('hidden');
+        if (isPaused) pausePopup.classList.remove('hidden'); else pausePopup.classList.add('hidden');
       });
+      bindClick(btnResumeMatch, () => { isPaused = false; pausePopup.classList.add('hidden'); });
+      bindClick(btnPauseReturnHome, () => { pausePopup.classList.add('hidden'); homeScreen.classList.remove('hidden'); Records.refreshUI(); });
 
-      bindClick(btnResumeMatch, (e) => {
-        e.stopPropagation();
-        isPaused = false;
-        pausePopup.classList.add('hidden');
-      });
-
-      bindClick(btnPauseReturnHome, (e) => {
-        e.stopPropagation();
-        pausePopup.classList.add('hidden');
-        homeScreen.classList.remove('hidden');
-        Records.refreshUI();
-      });
-
-      bindClick(btnRematch, (e) => {
-        e.stopPropagation();
-        if (gameMode === 'Online' && peerConn && peerConn.open) {
-          peerConn.send({ t: 'rematch' });
-        }
+      bindClick(btnRematch, () => {
+        if (gameMode === 'Online' && peerConn && peerConn.open) peerConn.send({ t: 'rematch' });
         resetMatchSession();
       });
-
-      bindClick(btnResultHome, (e) => {
-        e.stopPropagation();
-        resultModal.classList.add('hidden');
-        homeScreen.classList.remove('hidden');
-        Records.refreshUI();
-      });
+      bindClick(btnResultHome, () => { resultModal.classList.add('hidden'); homeScreen.classList.remove('hidden'); Records.refreshUI(); });
 
       renderPaletteOptions();
       setupCanvasInputs();
       window.addEventListener('resize', resizeArena);
       resizeArena();
       Records.refreshUI();
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const roomParam = urlParams.get('room');
-      if (roomParam) {
-        btnModeOnline.click();
-        btnJoinRoom.click();
-        targetPeerInput.value = roomParam;
-        setTimeout(() => {
-          btnConnectPeer.click();
-        }, 800);
-      }
 
       requestAnimationFrame(render);
     }
