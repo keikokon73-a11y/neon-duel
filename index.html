@@ -1254,7 +1254,6 @@
         try { peer.destroy(); } catch (e) {}
       }
 
-      // STUN & TURN中継サーバー設定（NAT/ファイアウォール貫通対策）
       const peerConfig = {
         config: {
           iceServers: [
@@ -1592,18 +1591,41 @@
         });
       });
 
+      // 改善版: ボタン反応の保証とエラー通知を追加
       bindClick(btnConnectPeer, () => {
         const targetId = targetPeerInput.value.trim().toUpperCase();
-        if (!targetId) return;
+        if (!targetId) {
+          alert('有効なルームIDを入力してください。');
+          return;
+        }
         AudioEngine.init();
+
+        const netStatusBadge = document.getElementById('netStatusBadge');
+        if (netStatusBadge) {
+          netStatusBadge.textContent = '相手に接続中...';
+          netStatusBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono animate-pulse';
+        }
+
+        const connectToTarget = () => {
+          try {
+            const conn = peer.connect(targetId, { reliable: true });
+            if (!conn) {
+              alert('接続の確立に失敗しました。');
+              return;
+            }
+            setupPeerConnection(conn);
+          } catch (err) {
+            console.error('Connection error:', err);
+            alert('接続エラーが発生しました。IDを確認してください。');
+          }
+        };
+
         if (!peer || peer.destroyed) {
           initPeerInstance(null, () => {
-            const conn = peer.connect(targetId, { reliable: true });
-            setupPeerConnection(conn);
+            connectToTarget();
           });
         } else {
-          const conn = peer.connect(targetId, { reliable: true });
-          setupPeerConnection(conn);
+          connectToTarget();
         }
       });
 
