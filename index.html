@@ -1591,7 +1591,7 @@
         });
       });
 
-      // 改善版: ボタン反応の保証とエラー通知を追加
+      // 10秒タイムアウト機能付きの接続処理
       bindClick(btnConnectPeer, () => {
         const targetId = targetPeerInput.value.trim().toUpperCase();
         if (!targetId) {
@@ -1613,10 +1613,27 @@
               alert('接続の確立に失敗しました。');
               return;
             }
+
+            // 10秒間のタイムアウト設定
+            const timeoutTimer = setTimeout(() => {
+              if (!conn.open) {
+                alert('接続がタイムアウトしました。ルームIDが正しいか、ホスト側が部屋の待機画面を開いているかご確認ください。');
+                if (netStatusBadge) {
+                  netStatusBadge.textContent = '接続失敗 (タイムアウト)';
+                  netStatusBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 font-mono';
+                }
+                try { conn.close(); } catch(e) {}
+              }
+            }, 10000);
+
+            conn.on('open', () => {
+              clearTimeout(timeoutTimer);
+            });
+
             setupPeerConnection(conn);
           } catch (err) {
             console.error('Connection error:', err);
-            alert('接続エラーが発生しました。IDを確認してください。');
+            alert('接続エラーが発生しました。');
           }
         };
 
